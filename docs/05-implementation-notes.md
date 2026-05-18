@@ -28,46 +28,35 @@
 ## 5-2. 推奨ディレクトリ構成（実装時）
 
 ```
-shibuyaseitailp/
+shibuyaseitailp/                       # リポジトリルート ＝ Webサイトルート
 ├── README.md
-├── docs/                              # 戦略ドキュメント（このフェーズの成果物）
+├── index.html                        # メインLP（GitHub Pagesのトップページ）
+├── thanks.html                       # サンクスページ（CV計測タグ発火）
+├── privacy.html                      # プライバシーポリシー
+├── terms.html                        # 利用規約
+├── assets/
+│   ├── css/
+│   │   └── main.css
+│   ├── js/
+│   │   └── main.js                  # スクロール追従・FAQ開閉・フォームバリデーション
+│   └── img/
+│       ├── fv/                      # ファーストビュー画像
+│       ├── ai-analysis/             # AI姿勢分析関連
+│       ├── staff/                   # 施術者写真
+│       ├── store/                   # 店舗写真
+│       ├── flow/                    # 施術の流れ
+│       ├── testimonials/            # お客様写真（実写 or イラスト）
+│       └── beforeafter/             # 姿勢の変化事例（注釈必須）
+├── docs/                            # 戦略ドキュメント（Phase 1成果物）
 │   ├── 01-strategy-and-positioning.md
 │   ├── 02-lp-structure-and-copy.md
 │   ├── 03-compliance-and-beforeafter.md
 │   ├── 04-listing-ads.md
 │   └── 05-implementation-notes.md
-│
-├── public/                            # 公開静的アセット
-│   ├── index.html                    # メインLP
-│   ├── thanks.html                   # サンクスページ（CV計測タグ発火）
-│   ├── privacy.html                  # プライバシーポリシー
-│   ├── terms.html                    # 利用規約
-│   ├── assets/
-│   │   ├── css/
-│   │   │   ├── reset.css
-│   │   │   ├── main.css
-│   │   │   └── responsive.css
-│   │   ├── js/
-│   │   │   ├── main.js              # スクロール追従・FAQ開閉等
-│   │   │   ├── form.js              # フォームバリデーション・送信
-│   │   │   └── tracking.js          # GA4・広告タグ
-│   │   ├── img/
-│   │   │   ├── fv/                  # ファーストビュー画像
-│   │   │   ├── ai-analysis/         # AI姿勢分析関連
-│   │   │   ├── staff/               # 施術者写真
-│   │   │   ├── store/               # 店舗写真
-│   │   │   ├── flow/                # 施術の流れ
-│   │   │   ├── testimonials/        # お客様写真（実写 or イラスト）
-│   │   │   └── beforeafter/         # 姿勢の変化事例（注釈必須）
-│   │   └── fonts/
-│   └── favicon.ico
-│
-├── src/                              # ビルド前ソース（Sass等使う場合）
-│   └── scss/
-│
-├── .gitignore
-└── package.json                      # 任意（Live Server等の開発依存）
+└── .gitignore
 ```
+
+> **設計判断**：LP（`index.html`）をリポジトリルートに配置することで、GitHub Pages / Cloudflare Pages / Vercel Static の各種ホスティングサービスで設定変更なしにそのまま公開できます。
 
 ---
 
