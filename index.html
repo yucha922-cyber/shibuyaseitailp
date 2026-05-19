@@ -88,23 +88,34 @@
   </a>
 </section>
 
-<!-- ================== Worries (共感) ================== -->
+<!-- ================== Worries (共感) ==================
+  背景画像は assets/img/worries/bg.jpg に配置してください。
+  画像が見つからない場合は assets/img/worries/placeholder.svg がフォールバック表示されます。
+-->
 <section class="section worries">
+  <div class="worries__bg" aria-hidden="true">
+    <img
+      src="assets/img/worries/bg.jpg"
+      alt=""
+      loading="lazy"
+      onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
+  </div>
+  <div class="worries__overlay" aria-hidden="true"></div>
+
   <div class="container">
     <div class="section-head reveal">
-      <div class="section-head__label">Worries</div>
       <h2 class="section-head__title">こんなお悩み、ありませんか？</h2>
     </div>
 
     <ul class="worries__list reveal">
-      <li class="worries__item"><span class="worries__check">✓</span>デスクワークで一日中、肩や首が重い</li>
-      <li class="worries__item"><span class="worries__check">✓</span>マッサージに行っても、3日でまた戻ってしまう</li>
-      <li class="worries__item"><span class="worries__check">✓</span>写真に写る自分の姿勢に、最近ハッとした</li>
-      <li class="worries__item"><span class="worries__check">✓</span>朝起きた瞬間から、すでに腰が張っている</li>
-      <li class="worries__item"><span class="worries__check">✓</span>鏡を見るとスマホ首・猫背が気になる</li>
-      <li class="worries__item"><span class="worries__check">✓</span>整骨院に通ったが、効果がわからず辞めた経験がある</li>
-      <li class="worries__item"><span class="worries__check">✓</span>何が原因か分からないまま、不調と付き合っている</li>
-      <li class="worries__item"><span class="worries__check">✓</span>仕事のパフォーマンスが、身体の重さに引っ張られている</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>デスクワークで一日中、肩や首が重い</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>マッサージに行っても、3日でまた戻ってしまう</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>写真に写る自分の姿勢に、最近ハッとした</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>朝起きた瞬間から、すでに腰が張っている</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>鏡を見るとスマホ首・猫背が気になる</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>整骨院に通ったが、効果がわからず辞めた経験がある</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>何が原因か分からないまま、不調と付き合っている</li>
+      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>仕事のパフォーマンスが、身体の重さに引っ張られている</li>
     </ul>
 
     <p class="worries__footer reveal">ひとつでも当てはまった方は、ぜひこの先を読み進めてください。</p>

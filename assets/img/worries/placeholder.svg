@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="共感セクション背景画像のプレースホルダー">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a2b4a"/>
+      <stop offset="50%" stop-color="#2c8a93"/>
+      <stop offset="100%" stop-color="#1a2b4a"/>
+    </linearGradient>
+    <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1.5" fill="rgba(255,255,255,0.18)"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#dots)"/>
+  <g transform="translate(800,380)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" fill="rgba(255,255,255,0.95)">
+    <text font-size="56" font-weight="700">共感セクション 背景画像</text>
+    <text y="64" font-size="28" font-weight="500" fill="rgba(255,255,255,0.75)">未設定</text>
+  </g>
+  <g transform="translate(800,560)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" fill="rgba(255,255,255,0.85)">
+    <text font-size="26" font-weight="500">assets/img/worries/bg.jpg</text>
+    <text y="40" font-size="22">に画像をアップロードしてください</text>
+  </g>
+</svg>
