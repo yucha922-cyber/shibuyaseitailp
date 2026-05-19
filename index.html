@@ -70,58 +70,22 @@
   </div>
 </header>
 
-<!-- ================== First View ================== -->
+<!-- ================== First View ==================
+  ファーストビュー画像は assets/img/fv/hero.jpg に配置してください。
+  画像が見つからない場合は assets/img/fv/placeholder.svg がフォールバック表示されます。
+  画像全体が #reserve（予約フォーム）へのリンクになっています。
+-->
 <section class="fv" id="top">
-  <div class="fv__inner">
-    <div>
-      <span class="fv__lead-badge">渋谷駅徒歩2分・AI姿勢分析つき</span>
-
-      <h1 class="fv__title">
-        その肩こり、<br>
-        <em>姿勢が原因</em>かもしれません。
-      </h1>
-
-      <p class="fv__sub">
-        AI姿勢分析であなたの身体を数値で見える化。<br>
-        国家資格者が、姿勢の根本にアプローチする整体です。
-      </p>
-
-      <div class="fv__price">
-        <span class="fv__price-label">初回限定</span>
-        <div class="fv__price-detail">
-          <span class="fv__price-strike">通常 ¥6,600</span>
-          <span class="fv__price-now">¥3,500<small>（税込）</small></span>
-        </div>
-        <span class="fv__price-note">
-          AI姿勢分析<br>
-          カウンセリング<br>
-          施術 すべて込み
-        </span>
-      </div>
-
-      <ul class="fv__badges">
-        <li class="fv__badge"><span class="fv__badge-icon">✓</span>渋谷駅 徒歩2分</li>
-        <li class="fv__badge"><span class="fv__badge-icon">✓</span>国家資格者 在籍</li>
-        <li class="fv__badge"><span class="fv__badge-icon">✓</span>平日20時・土日祝も</li>
-        <li class="fv__badge"><span class="fv__badge-icon">✓</span>強引な勧誘なし</li>
-      </ul>
-
-      <div class="fv__ctas">
-        <a href="#reserve" class="btn btn--cta">
-          初回3,500円で予約する
-          <small>30秒で入力完了</small>
-        </a>
-        <a href="#" class="btn btn--line">
-          LINEで予約する
-          <small>友だち追加から</small>
-        </a>
-      </div>
-    </div>
-
-    <div class="fv__visual" role="img" aria-label="院内・施術風景・AI姿勢分析画面のイメージ">
-      <!-- 実装時：FV用の院内 or 施術風景 or AI姿勢分析画面の高画質写真に差し替え -->
-    </div>
-  </div>
+  <a href="#reserve" class="fv__image-link" aria-label="初回限定3,500円キャンペーン｜予約フォームへ進む">
+    <img
+      src="assets/img/fv/hero.jpg"
+      alt="NAORU整体 渋谷院｜つらい肩こりを根本改善｜AI×整体で根本改善へ｜初回限定キャンペーン 3,500円（税込）"
+      class="fv__image"
+      width="1500"
+      height="1000"
+      fetchpriority="high"
+      onerror="this.onerror=null;this.src='assets/img/fv/placeholder.svg';">
+  </a>
 </section>
 
 <!-- ================== Worries (共感) ================== -->

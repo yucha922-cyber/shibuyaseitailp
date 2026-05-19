@@ -185,166 +185,32 @@ ul, ol { list-style: none; }
 }
 
 /* ----------------------------------------------------------------
-   5. First View (FV)
+   5. First View (FV) - 画像1枚を全幅でバンと表示
+   画像差し替え：assets/img/fv/hero.jpg を置き換えるだけ
 ---------------------------------------------------------------- */
 .fv {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(245,247,250,0.4) 0%, #ffffff 100%),
-    linear-gradient(135deg, #e8f3f4 0%, #f5f7fa 100%);
-  padding: 32px 0 56px;
-  overflow: hidden;
-}
-.fv__inner {
-  display: grid;
-  gap: 28px;
-  max-width: var(--container-max);
-  margin: 0 auto;
-  padding: 0 20px;
-}
-.fv__lead-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--c-primary);
-  color: #fff;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  width: fit-content;
-}
-.fv__lead-badge::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  background: var(--c-accent-light);
-  border-radius: 50%;
-}
-.fv__title {
-  font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.45;
-  color: var(--c-primary);
-  letter-spacing: 0.01em;
-}
-.fv__title em {
-  font-style: normal;
-  color: var(--c-accent);
-  border-bottom: 3px solid var(--c-accent);
-  padding-bottom: 2px;
-}
-.fv__sub {
-  font-size: 14px;
-  color: var(--c-text-muted);
-  line-height: 1.8;
-}
-.fv__price {
   background: #fff;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 4px 16px var(--c-shadow);
-}
-.fv__price-label {
-  font-size: 11px;
-  background: var(--c-cta);
-  color: #fff;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-.fv__price-detail {
-  display: flex;
-  flex-direction: column;
-}
-.fv__price-strike {
-  font-size: 12px;
-  color: var(--c-text-light);
-  text-decoration: line-through;
-}
-.fv__price-now {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--c-primary);
-  line-height: 1.2;
-}
-.fv__price-now small {
-  font-size: 13px;
-  font-weight: 500;
-  margin-left: 4px;
-}
-.fv__price-note {
-  font-size: 11px;
-  color: var(--c-text-muted);
-  margin-left: auto;
-  text-align: right;
-}
-
-.fv__badges {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.fv__badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #fff;
-  border: 1px solid var(--c-border-soft);
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  color: var(--c-primary);
-  font-weight: 500;
-}
-.fv__badge-icon {
-  color: var(--c-accent);
-  font-weight: 700;
-}
-.fv__ctas {
-  display: grid;
-  gap: 10px;
-}
-.fv__visual {
-  position: relative;
-  border-radius: var(--radius-md);
+  padding: 0;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
-  background: linear-gradient(135deg, #2c8a93 0%, #1a2b4a 100%);
-  display: grid;
-  place-items: center;
-  color: rgba(255,255,255,0.6);
-  font-size: 12px;
-  text-align: center;
+  line-height: 0;
 }
-.fv__visual::after {
-  content: "[ 院内・施術風景・AI姿勢分析画面の写真をここに ]";
-  padding: 16px;
+.fv__image-link {
+  display: block;
+  width: 100%;
+  transition: opacity 0.2s;
 }
-
-@media (min-width: 900px) {
-  .fv { padding: 48px 0 72px; }
-  .fv__inner {
-    grid-template-columns: 1.1fr 1fr;
-    align-items: center;
-    gap: 48px;
-  }
-  .fv__title { font-size: 36px; }
-  .fv__sub { font-size: 16px; }
-  .fv__price-now { font-size: 30px; }
-  .fv__badges { grid-template-columns: 1fr 1fr; }
-  .fv__ctas {
-    grid-template-columns: 1fr 1fr;
-  }
-  .fv__visual { aspect-ratio: 4 / 5; }
+.fv__image-link:hover { opacity: 0.96; }
+.fv__image {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* hero.jpg がアップロードされるまでの間、SVGプレースホルダー表示時に
+     CLS（レイアウトシフト）を防ぐためのアスペクト比 */
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  object-position: center;
+  background: linear-gradient(135deg, #e8f3f4 0%, #d4e8eb 100%);
 }
 
 /* ----------------------------------------------------------------

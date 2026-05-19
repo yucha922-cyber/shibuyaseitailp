@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" preserveAspectRatio="xMidYMid slice" role="img" aria-label="ファーストビュー画像のプレースホルダー">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8f3f4"/>
+      <stop offset="100%" stop-color="#d4e8eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1500" height="1000" fill="url(#bg)"/>
+  <g transform="translate(750,420)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" fill="#1a2b4a">
+    <text font-size="72" font-weight="700">ファーストビュー画像</text>
+    <text y="80" font-size="40" font-weight="500" fill="#5a6678">未設定</text>
+  </g>
+  <g transform="translate(750,650)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" fill="#5a6678">
+    <text font-size="32" font-weight="500">assets/img/fv/hero.jpg</text>
+    <text y="48" font-size="28">に画像をアップロードしてください</text>
+  </g>
+  <rect x="60" y="60" width="1380" height="880" fill="none" stroke="#1a2b4a" stroke-width="3" stroke-dasharray="12,12" opacity="0.3" rx="16"/>
+</svg>
