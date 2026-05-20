@@ -482,7 +482,16 @@ ul, ol { list-style: none; }
 
 /* ----------------------------------------------------------------
    9. Approach (NAORUの独自アプローチ)
+   背景：明るい希望感のあるグラデーション
+   画像差し替え：assets/img/approach/reason1〜3.jpg を置き換えるだけ
 ---------------------------------------------------------------- */
+.approach {
+  background:
+    linear-gradient(135deg,
+      #f3fbfb 0%,
+      #e6f5f7 40%,
+      #eaf3fd 100%);
+}
 .approach__intro {
   text-align: center;
   font-size: 14px;
@@ -521,15 +530,18 @@ ul, ol { list-style: none; }
   line-height: 1.9;
 }
 .approach__visual {
-  background: linear-gradient(135deg, #e8f3f4 0%, #d4e8eb 100%);
   border-radius: var(--radius-md);
+  overflow: hidden;
   aspect-ratio: 4 / 3;
-  display: grid;
-  place-items: center;
-  color: var(--c-text-light);
-  font-size: 12px;
-  text-align: center;
-  padding: 16px;
+  background: linear-gradient(135deg, #e8f3f4 0%, #d4e8eb 100%);
+  box-shadow: 0 10px 30px rgba(20, 35, 60, 0.12);
+}
+.approach__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 @media (min-width: 768px) {

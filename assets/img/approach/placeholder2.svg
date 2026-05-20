@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="REASON 02 画像のプレースホルダー">
+  <defs>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef6f7"/>
+      <stop offset="100%" stop-color="#d4e8eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g2)"/>
+  <g transform="translate(400,250)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif">
+    <text font-size="30" font-weight="700" fill="#1a2b4a" letter-spacing="2">REASON 02</text>
+    <text y="50" font-size="22" font-weight="500" fill="#2c8a93">施術風景・優しい雰囲気の写真</text>
+  </g>
+  <g transform="translate(400,360)" text-anchor="middle" font-family="'Noto Sans JP', sans-serif" fill="#5a6678">
+    <text font-size="18" font-weight="500">assets/img/approach/reason2.jpg</text>
+    <text y="30" font-size="16">に画像をアップロードしてください</text>
+  </g>
+  <rect x="30" y="30" width="740" height="540" fill="none" stroke="#2c8a93" stroke-width="2" stroke-dasharray="10,10" opacity="0.3" rx="12"/>
+</svg>
