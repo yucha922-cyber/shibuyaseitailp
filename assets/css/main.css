@@ -727,6 +727,21 @@ ul, ol { list-style: none; }
   font-size: 13px;
   font-weight: 600;
 }
+.testimonial-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.testimonial-card__rating {
+  color: #f5b50a;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.testimonial-card__time {
+  font-size: 11px;
+  color: var(--c-text-light);
+}
 .testimonial-card__trigger {
   font-size: 11px;
   color: var(--c-accent);
