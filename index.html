@@ -337,10 +337,12 @@
       <h2 class="section-head__title">渋谷院をご利用のお客様の、<br>ご感想です。</h2>
     </div>
 
-    <div class="testimonials__grid">
-      <article class="testimonial-card reveal">
+    <div class="testimonials reveal" data-testimonials>
+      <div class="testimonials__viewport">
+        <div class="testimonials__track">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">M</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>M.K 様</strong>
             <span class="testimonial-card__meta">
@@ -354,9 +356,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">H</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>H.N 様</strong>
             <span class="testimonial-card__meta">
@@ -370,9 +372,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">H</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>H 様</strong>
             <span class="testimonial-card__meta">
@@ -386,9 +388,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">S</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>S.I 様</strong>
             <span class="testimonial-card__meta">
@@ -398,17 +400,17 @@
           </div>
         </div>
         <p class="testimonial-card__body">
-          長年のデスクワークで蓄積してしまった姿勢の悪さが自己流のストレッチでは解決できず、根本的に改善したくて整体を探していた所NAORU整体さんに辿り着きました。<br><br>
-          体の悩みと真摯に向き合っていただき自分1人ではアプローチ出来ない部分もしっかり施術していただけるので<em>一回でもかなり体が変わった実感がありました！</em><br><br>
-          可動域が広がり体に柔軟性が出来たので本来の自分の正しい姿勢を見ることが出来ました。<br><br>
-          日常生活を送る上でのストレッチのアドバイスも大変助かります。<br><br>
+          長年のデスクワークで蓄積してしまった姿勢の悪さが自己流のストレッチでは解決できず、根本的に改善したくて整体を探していた所NAORU整体さんに辿り着きました。<br>
+          体の悩みと真摯に向き合っていただき自分1人ではアプローチ出来ない部分もしっかり施術していただけるので<em>一回でもかなり体が変わった実感がありました！</em><br>
+          可動域が広がり体に柔軟性が出来たので本来の自分の正しい姿勢を見ることが出来ました。<br>
+          日常生活を送る上でのストレッチのアドバイスも大変助かります。<br>
           これからもっと姿勢を改善できるようにお世話になります！
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">S</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>S.Y 様</strong>
             <span class="testimonial-card__meta">
@@ -422,9 +424,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">P</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>P.T 様</strong>
             <span class="testimonial-card__meta">
@@ -438,9 +440,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">R</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>R.S 様</strong>
             <span class="testimonial-card__meta">
@@ -454,9 +456,9 @@
         </p>
       </article>
 
-      <article class="testimonial-card reveal">
+      <article class="testimonial-card">
         <div class="testimonial-card__header">
-          <div class="testimonial-card__avatar">T</div>
+          <div class="testimonial-card__avatar" aria-hidden="true"></div>
           <div class="testimonial-card__attr">
             <strong>T.S 様</strong>
             <span class="testimonial-card__meta">
@@ -469,6 +471,17 @@
           インスタの広告で見て、ものは試しに行ってみました。当方そんじょそこらのヘッドスパだと全く治らない頭痛と10数年付き合っています。しっかりした問診をいただき、自分のどこに根本的な原因があるのかを探っていただきました。<em>施術前にあった頭痛が、実際にかなり和らいでいて驚きました！</em>それ以外にも肩や胸の張りが明らかに良くなっている実感があり、大変効果を感じております。またお世話になります。
         </p>
       </article>
+        </div>
+      </div>
+
+      <button type="button" class="testimonials__arrow testimonials__arrow--prev" aria-label="前の口コミ">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="testimonials__arrow testimonials__arrow--next" aria-label="次の口コミ">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <div class="testimonials__dots" role="tablist" aria-label="口コミの切り替え"></div>
     </div>
 
     <p class="testimonials__disclaimer">
