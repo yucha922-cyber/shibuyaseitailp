@@ -176,29 +176,51 @@
         '</svg>';
     });
 
-    // --- カルーセル制御 ---
-    let index = 0;
-    const step = 100 / slides.length;
+    // --- カルーセル制御（1ページに表示するカラム数だけ送る） ---
+    const GAP = 16;
+    let page = 0;
+    let dots = [];
 
-    const dots = slides.map(function (_, i) {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.className = 'testimonials__dot';
-      dot.setAttribute('role', 'tab');
-      dot.setAttribute('aria-label', (i + 1) + '番目の口コミ');
-      dot.addEventListener('click', function () { go(i); });
-      if (dotsWrap) dotsWrap.appendChild(dot);
-      return dot;
-    });
-
-    function go(i) {
-      index = (i + slides.length) % slides.length;
-      track.style.transform = 'translateX(' + (-index * step) + '%)';
-      dots.forEach(function (d, di) { d.classList.toggle('is-active', di === index); });
+    function perView() {
+      if (window.matchMedia('(min-width: 980px)').matches) return 3;
+      if (window.matchMedia('(min-width: 640px)').matches) return 2;
+      return 1;
+    }
+    function pageCount() {
+      return Math.max(1, Math.ceil(slides.length / perView()));
     }
 
-    if (prevBtn) prevBtn.addEventListener('click', function () { go(index - 1); });
-    if (nextBtn) nextBtn.addEventListener('click', function () { go(index + 1); });
+    function buildDots() {
+      if (!dotsWrap) return;
+      dotsWrap.innerHTML = '';
+      dots = [];
+      const count = pageCount();
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'testimonials__dot';
+        dot.setAttribute('role', 'tab');
+        dot.setAttribute('aria-label', (i + 1) + 'ページ目の口コミ');
+        (function (idx) {
+          dot.addEventListener('click', function () { go(idx); });
+        })(i);
+        dotsWrap.appendChild(dot);
+        dots.push(dot);
+      }
+    }
+
+    function go(i) {
+      const count = pageCount();
+      page = (i + count) % count;
+      let x = page * (viewport.clientWidth + GAP);
+      const max = track.scrollWidth - viewport.clientWidth;
+      if (x > max) x = Math.max(0, max);
+      track.style.transform = 'translateX(' + (-x) + 'px)';
+      dots.forEach(function (d, di) { d.classList.toggle('is-active', di === page); });
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(page - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(page + 1); });
 
     // スワイプ操作（モバイル）
     if (viewport) {
@@ -209,11 +231,22 @@
       viewport.addEventListener('touchend', function (e) {
         if (startX === null) return;
         const dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+        if (Math.abs(dx) > 40) go(page + (dx < 0 ? 1 : -1));
         startX = null;
       });
     }
 
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(function () {
+        buildDots();
+        if (page > pageCount() - 1) page = pageCount() - 1;
+        go(page);
+      }, 150);
+    });
+
+    buildDots();
     go(0);
   });
 

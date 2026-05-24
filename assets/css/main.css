@@ -694,6 +694,7 @@ ul, ol { list-style: none; }
 }
 .testimonials__track {
   display: flex;
+  gap: 16px;
   transition: transform 0.45s ease;
   will-change: transform;
 }
@@ -817,7 +818,11 @@ ul, ol { list-style: none; }
   font-size: 11px;
   color: var(--c-text-muted);
 }
+@media (min-width: 640px) {
+  .testimonial-card { flex-basis: calc((100% - 16px) / 2); }
+}
 @media (min-width: 980px) {
+  .testimonial-card { flex-basis: calc((100% - 32px) / 3); }
   .testimonials__arrow--prev { left: -20px; }
   .testimonials__arrow--next { right: -20px; }
 }
