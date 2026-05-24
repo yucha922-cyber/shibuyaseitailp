@@ -145,7 +145,79 @@
     });
   }
 
-  // ---------- 6. Current year for footer ----------
+  // ---------- 6. Testimonials carousel (1件ずつ表示) + ランダムアバター ----------
+  document.querySelectorAll('[data-testimonials]').forEach(function (root) {
+    const track = root.querySelector('.testimonials__track');
+    const viewport = root.querySelector('.testimonials__viewport');
+    const slides = Array.prototype.slice.call(root.querySelectorAll('.testimonial-card'));
+    const prevBtn = root.querySelector('.testimonials__arrow--prev');
+    const nextBtn = root.querySelector('.testimonials__arrow--next');
+    const dotsWrap = root.querySelector('.testimonials__dots');
+    if (!track || slides.length === 0) return;
+
+    // --- ランダムな横顔シルエットのアバター ---
+    const palettes = [
+      'linear-gradient(135deg, #2c8a93 0%, #54adb5 100%)',
+      'linear-gradient(135deg, #3e5277 0%, #647aa3 100%)',
+      'linear-gradient(135deg, #6f9a82 0%, #93b9a2 100%)',
+      'linear-gradient(135deg, #c08a63 0%, #d6a87f 100%)',
+      'linear-gradient(135deg, #7d6f9a 0%, #9d90b8 100%)'
+    ];
+    slides.forEach(function (card) {
+      const avatar = card.querySelector('.testimonial-card__avatar');
+      if (!avatar) return;
+      avatar.style.background = palettes[Math.floor(Math.random() * palettes.length)];
+      const flip = Math.random() < 0.5 ? ' style="transform:scaleX(-1)"' : '';
+      avatar.innerHTML =
+        '<svg viewBox="0 0 64 64" fill="rgba(255,255,255,0.95)"' + flip + '>' +
+        '<circle cx="36" cy="22" r="12.5"/>' +
+        '<path d="M24 17 L15 22 L24 27 Z"/>' +
+        '<path d="M11 64 V54 C11 43 22 38 34 38 C46 38 57 43 57 54 V64 Z"/>' +
+        '</svg>';
+    });
+
+    // --- カルーセル制御 ---
+    let index = 0;
+    const step = 100 / slides.length;
+
+    const dots = slides.map(function (_, i) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'testimonials__dot';
+      dot.setAttribute('role', 'tab');
+      dot.setAttribute('aria-label', (i + 1) + '番目の口コミ');
+      dot.addEventListener('click', function () { go(i); });
+      if (dotsWrap) dotsWrap.appendChild(dot);
+      return dot;
+    });
+
+    function go(i) {
+      index = (i + slides.length) % slides.length;
+      track.style.transform = 'translateX(' + (-index * step) + '%)';
+      dots.forEach(function (d, di) { d.classList.toggle('is-active', di === index); });
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(index - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(index + 1); });
+
+    // スワイプ操作（モバイル）
+    if (viewport) {
+      let startX = null;
+      viewport.addEventListener('touchstart', function (e) {
+        startX = e.touches[0].clientX;
+      }, { passive: true });
+      viewport.addEventListener('touchend', function (e) {
+        if (startX === null) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+        startX = null;
+      });
+    }
+
+    go(0);
+  });
+
+  // ---------- 7. Current year for footer ----------
   const yearEl = document.getElementById('current-year');
   if (yearEl) {
     yearEl.textContent = String(new Date().getFullYear());
