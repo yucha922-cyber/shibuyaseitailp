@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@line/bot-sdk": "^9.2.2",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "googleapis": "^173.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
