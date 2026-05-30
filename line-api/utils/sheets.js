@@ -7,12 +7,16 @@
  *
  * 必要な環境変数:
  *   SPREADSHEET_ID  : GoogleスプレッドシートのID（URLの /d/〇〇〇/ の部分）
- *   GOOGLE_CREDENTIALS_PATH : credentials.json のパス（省略時は ./credentials.json）
+ *
+ * 認証情報（どちらか一方を設定すればOK）:
+ *   ◆ Vercel本番  : GOOGLE_CREDENTIALS_JSON に credentials.json の中身を丸ごと貼り付け
+ *   ◆ ローカル開発 : GOOGLE_CREDENTIALS_PATH に json ファイルのパスを指定
+ *                    （省略時は line-api/credentials.json を自動で探す）
  *
  * 必要な準備:
- *   1. Google Cloud Console でサービスアカウントを作成し credentials.json をダウンロード
+ *   1. Google Cloud Console でサービスアカウントを作成し json をダウンロード
  *   2. スプレッドシートにサービスアカウントのメールアドレスを「編集者」として共有
- *   3. .env に SPREADSHEET_ID を設定
+ *   3. SPREADSHEET_ID と認証情報を環境変数に設定
  */
 
 const { google } = require('googleapis');
@@ -23,7 +27,7 @@ const path = require('path');
 // スプレッドシートIDを環境変数から取得（必須）
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
-// credentials.json のパス（環境変数で上書き可能）
+// credentials.json のパス（環境変数で上書き可能。省略時は line-api/credentials.json）
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH
   ? path.resolve(process.env.GOOGLE_CREDENTIALS_PATH)
   : path.resolve(__dirname, '..', 'credentials.json');
@@ -31,16 +35,37 @@ const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH
 // データを書き込むシート名と開始列（A列〜E列 = 5列分）
 const SHEET_RANGE = 'Sheet1!A:E';
 
+// 認証に必要なスコープ（スプレッドシートの読み書き）
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+
 // ---- 認証 ----------------------------------------------------------------
 
 /**
  * Service Account 認証クライアントを生成する
- * credentials.json を読み込み、Sheets API への書き込み権限を付与する
+ *
+ * 優先順位:
+ *   1. GOOGLE_CREDENTIALS_JSON（環境変数にJSON文字列）→ Vercel本番向け
+ *   2. credentials.json ファイル（keyFile）          → ローカル開発向け
  */
 async function getAuthClient() {
+  // --- パターン1: 環境変数にJSONが入っている場合（Vercel本番） ---
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    let credentials;
+    try {
+      credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+    } catch (err) {
+      throw new Error(
+        '[sheets.js] GOOGLE_CREDENTIALS_JSON の形式が不正です（JSONとして解析できません）。'
+      );
+    }
+    const auth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
+    return auth.getClient();
+  }
+
+  // --- パターン2: ファイルから読み込む場合（ローカル開発） ---
   const auth = new google.auth.GoogleAuth({
     keyFile: CREDENTIALS_PATH,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: SCOPES,
   });
   return auth.getClient();
 }
