@@ -33,7 +33,7 @@ const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH
   : path.resolve(__dirname, '..', 'credentials.json');
 
 // データを書き込むシート名と開始列（A列〜E列 = 5列分）
-const SHEET_RANGE = 'Sheet1!A:E';
+const SHEET_RANGE = 'シート1!A:E';
 
 // 認証に必要なスコープ（スプレッドシートの読み書き）
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
