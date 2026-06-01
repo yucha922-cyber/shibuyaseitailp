@@ -32,8 +32,11 @@ const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH
   ? path.resolve(process.env.GOOGLE_CREDENTIALS_PATH)
   : path.resolve(__dirname, '..', 'credentials.json');
 
-// データを書き込むシート名と開始列（A列〜E列 = 5列分）
-const SHEET_RANGE = 'シート1!A:E';
+// データを書き込むシート名と範囲（A列〜M列 = 13列分）
+// 列構成: A日時 / B表示名 / C症状 / D問診内容 / E予約状況 /
+//         F姿勢タイプ / Gストレス / H睡眠 / Iデスクワーク / JAI要約 /
+//         K来院 / L継続 / M離反
+const SHEET_RANGE = 'シート1!A:M';
 
 // 認証に必要なスコープ（スプレッドシートの読み書き）
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
@@ -76,15 +79,38 @@ async function getAuthClient() {
  * スプレッドシートに1行追記する
  *
  * @param {Object} params
- * @param {string} params.displayName      - LINEの表示名
- * @param {string} params.symptom          - 症状（例: 肩こり、腰痛）
- * @param {string} params.inquiry          - 問診内容（ユーザーが送ったテキスト）
- * @param {string} params.reservationStatus - 予約状況（例: 予約済み、未予約）
+ * @param {string} params.displayName       - B列: LINEの表示名
+ * @param {string} params.symptom           - C列: 症状（例: 肩こり、腰痛）
+ * @param {string} params.inquiry           - D列: 問診内容（ユーザーが送ったテキスト）
+ * @param {string} params.reservationStatus - E列: 予約状況（例: 予約済み、未予約）
  *
- * ※ 将来的に OpenAI 問診へ拡張する場合は、この関数の params に
- *    { aiSummary, aiDiagnosis } などを追加し、列を増やすだけで対応できます。
+ * --- 以下は OpenAI 問診・CRM 用の拡張フィールド（任意・省略時は空欄） ---
+ * @param {string} [params.postureType] - F列: 姿勢タイプ（例: 猫背、反り腰）
+ * @param {string} [params.stress]      - G列: ストレス（AI判定）
+ * @param {string} [params.sleep]       - H列: 睡眠（AI判定）
+ * @param {string} [params.deskWork]    - I列: デスクワーク（AI判定）
+ * @param {string} [params.aiSummary]   - J列: AI要約（OpenAIによる問診まとめ）
+ * @param {string} [params.visited]     - K列: 来院（例: 済、未）
+ * @param {string} [params.continued]   - L列: 継続（リピート状況）
+ * @param {string} [params.churned]     - M列: 離反（離反フラグ）
+ *
+ * ※ OpenAI 問診を実装する際は、上記フィールドを呼び出し側で渡すだけで
+ *    自動的に対応する列へ保存されます（コード変更不要）。
  */
-async function appendToSheet({ displayName, symptom, inquiry, reservationStatus }) {
+async function appendToSheet({
+  displayName,
+  symptom,
+  inquiry,
+  reservationStatus,
+  postureType,
+  stress,
+  sleep,
+  deskWork,
+  aiSummary,
+  visited,
+  continued,
+  churned,
+}) {
   // 環境変数チェック（設定忘れを早期検出）
   if (!SPREADSHEET_ID) {
     throw new Error(
@@ -92,9 +118,24 @@ async function appendToSheet({ displayName, symptom, inquiry, reservationStatus 
     );
   }
 
-  // 書き込む行データを配列で定義（列順: 日時 / 表示名 / 症状 / 問診内容 / 予約状況）
+  // 書き込む行データを配列で定義（A列〜M列の順番に対応）
+  // 未指定の拡張フィールドは空文字 '' を入れて列ズレを防ぐ
   const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-  const row = [now, displayName ?? '不明', symptom ?? '不明', inquiry ?? '', reservationStatus ?? '未予約'];
+  const row = [
+    now,                          // A: 日時
+    displayName ?? '不明',        // B: LINE表示名
+    symptom ?? '不明',            // C: 症状
+    inquiry ?? '',                // D: 問診内容
+    reservationStatus ?? '未予約', // E: 予約状況
+    postureType ?? '',            // F: 姿勢タイプ
+    stress ?? '',                 // G: ストレス
+    sleep ?? '',                  // H: 睡眠
+    deskWork ?? '',               // I: デスクワーク
+    aiSummary ?? '',              // J: AI要約
+    visited ?? '',                // K: 来院
+    continued ?? '',              // L: 継続
+    churned ?? '',                // M: 離反
+  ];
 
   // 認証クライアントを取得
   const authClient = await getAuthClient();
