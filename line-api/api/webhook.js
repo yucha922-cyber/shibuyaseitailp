@@ -13,9 +13,9 @@
 
 const express = require('express');
 const line    = require('@line/bot-sdk');
-const { analyzeInquiry }                      = require('../utils/openai');
-const { appendToSheet, updateUserStatus }     = require('../utils/sheets');
-const { getConversationHistory, saveConversation, getUserData } = require('../utils/redis');
+const { analyzeInquiry }                                   = require('../utils/openai');
+const { appendToSheet, updateUserStatus, updateSupportStatus } = require('../utils/sheets');
+const { getConversationHistory, saveConversation, getUserData, getMode, setMode } = require('../utils/redis');
 
 // ---- LINE Bot 設定 -------------------------------------------------------
 
@@ -26,6 +26,21 @@ const config = {
 
 const RESERVE_URL = 'https://reserve.naoru.info/';
 const TEL         = '070-8519-6347';
+
+// ---- 対応モード切替キーワード --------------------------------------------
+//
+// これらのキーワードが含まれると「有人対応モード」に切り替わり、
+// 以降AIは返信せず、スタッフが対応する状態になる。
+
+const HUMAN_KEYWORDS = ['予約', '予約したい', 'よやく', '人と話したい', 'スタッフ', 'オペレーター', '担当者', '電話で話したい'];
+
+// 管理者・ユーザーがAI対応モードに戻すためのキーワード（リセット用）
+// スタッフがLINE公式アカウントの管理画面から、このキーワードを送るか、
+// ユーザーに送ってもらうことでAIモードに復帰できる。
+const RESET_KEYWORDS = ['#ai', '＃ai', 'AI再開', 'AIに戻す', 'AI問診'];
+
+// 対応完了にするキーワード（スタッフ用）
+const COMPLETE_KEYWORDS = ['#完了', '＃完了', '対応完了', '問診完了'];
 
 const client = new line.Client(config);
 const app    = express();
@@ -100,6 +115,28 @@ async function saveConversationSafe(userId, userMsg, assistantMsg, extra) {
   }
 }
 
+/**
+ * 対応モードの変更を安全に実行（失敗してもLINE返信は止めない）
+ */
+async function setModeSafe(userId, mode) {
+  try {
+    await setMode(userId, mode);
+  } catch (err) {
+    console.error('[webhook] モード変更失敗:', err.message);
+  }
+}
+
+/**
+ * O列（対応ステータス）更新を安全に実行
+ */
+async function updateSupportStatusSafe(rowNumber, status) {
+  try {
+    await updateSupportStatus(rowNumber, status);
+  } catch (err) {
+    console.error('[webhook] 対応ステータス更新失敗:', err.message);
+  }
+}
+
 // ---- メインのイベントハンドラ --------------------------------------------
 
 async function handleEvent(event) {
@@ -131,46 +168,80 @@ async function handleEvent(event) {
   const userId      = event.source?.userId;
   const displayName = await getDisplayName(userId);
 
-  // ---- 即答パターン（APIコスト節約・応答速度優先）------------------------
-
-  if (userText.includes('予約') || userText.includes('よやく')) {
-    const replyText = `ご予約ありがとうございます！\n\n▼Web予約（24時間受付）\n${RESERVE_URL}\n\n▼お電話\n${TEL}\n\n初回限定 3,500円（通常13,200円）のキャンペーン実施中です。`;
-    saveToSheetSafe({ userId, displayName, symptom: '予約希望', inquiry: userText, reservationStatus: '予約希望', aiSummary: 'ユーザーが予約を希望' });
-    saveConversationSafe(userId, userText, replyText, {});
-    return reply(event.replyToken, replyText);
-  }
-
-  if (userText.includes('電話') || userText.includes('tel') || userText.includes('TEL')) {
-    const replyText = `お電話はこちらです。\n${TEL}\n\n営業時間: 11:00〜20:00（最終受付19:00）`;
-    saveToSheetSafe({ userId, displayName, symptom: '電話問い合わせ', inquiry: userText, reservationStatus: '未予約', aiSummary: '電話番号の問い合わせ' });
-    saveConversationSafe(userId, userText, replyText, {});
-    return reply(event.replyToken, replyText);
-  }
-
-  if (userText.includes('場所') || userText.includes('アクセス') || userText.includes('住所')) {
-    const replyText = `NAORU整体 渋谷院は渋谷駅から徒歩圏内です。\n詳しいアクセスはWebサイトをご覧ください。\n\nお電話でもご案内できます。\n${TEL}`;
-    saveToSheetSafe({ userId, displayName, symptom: 'アクセス問い合わせ', inquiry: userText, reservationStatus: '未予約', aiSummary: 'アクセスの問い合わせ' });
-    saveConversationSafe(userId, userText, replyText, {});
-    return reply(event.replyToken, replyText);
-  }
-
-  // ---- AI問診（文脈あり）-------------------------------------------------
-
-  // Redisから過去の会話履歴と最新行番号を取得
+  // Redisから「現在の対応モード」「会話履歴」「最新行番号」を取得
+  let mode                = 'ai';
   let conversationHistory = [];
   let latestRow           = null;
 
   try {
-    const [history, userData] = await Promise.all([
+    const [currentMode, history, userData] = await Promise.all([
+      getMode(userId),
       getConversationHistory(userId),
       getUserData(userId),
     ]);
+    mode                = currentMode;
     conversationHistory = history;
     latestRow           = userData.latestRow ?? null;
   } catch (err) {
-    // Redis が使えなくても問診は続行（履歴なしの単発問診になる）
-    console.error('[webhook] Redis取得失敗（単発問診で続行）:', err.message);
+    // Redis が使えなくてもAIモードで続行する
+    console.error('[webhook] Redis取得失敗（AIモードで続行）:', err.message);
   }
+
+  // ---- ① リセットキーワード: 有人 → AI に戻す ---------------------------
+  // スタッフ（または案内されたユーザー）が「#ai」等を送るとAIモードに復帰
+  if (RESET_KEYWORDS.some((kw) => userText.includes(kw))) {
+    await setModeSafe(userId, 'ai');
+    if (latestRow) updateSupportStatusSafe(latestRow, 'AI対応中');
+    const replyText = 'AI問診を再開します。\n気になる症状やお悩みをお聞かせください。';
+    saveConversationSafe(userId, userText, replyText, {});
+    return reply(event.replyToken, replyText);
+  }
+
+  // ---- ② 完了キーワード: 問診完了にする（スタッフ用）---------------------
+  if (COMPLETE_KEYWORDS.some((kw) => userText.includes(kw))) {
+    await setModeSafe(userId, 'completed');
+    if (latestRow) updateSupportStatusSafe(latestRow, '問診完了');
+    // 完了時はユーザーへの自動返信はしない（スタッフが締めくくる想定）
+    return null;
+  }
+
+  // ---- ③ 有人対応モード中: AIを呼ばずスタッフに任せる -------------------
+  if (mode === 'human') {
+    // ユーザーの発言だけ記録し、AI返信はしない（スタッフが手動で返信）
+    saveToSheetSafe({
+      userId,
+      displayName,
+      symptom:           '有人対応',
+      inquiry:           userText,
+      reservationStatus: '対応中',
+      aiSummary:         'スタッフ対応中のメッセージ',
+      supportStatus:     '有人対応中',
+    });
+    return null; // ★AIは返信しない
+  }
+
+  // ---- ④ 有人対応モードへの切替キーワードを検出 --------------------------
+  // 「予約」「スタッフ」「人と話したい」等で有人対応へ切替
+  if (HUMAN_KEYWORDS.some((kw) => userText.includes(kw))) {
+    await setModeSafe(userId, 'human');
+
+    const replyText =
+      'ご連絡ありがとうございます。\nスタッフが順次対応いたしますので、少々お待ちください。\n\nお急ぎの場合はお電話でも承ります。\n' + TEL;
+
+    const newRow = await saveToSheetSafe({
+      userId,
+      displayName,
+      symptom:           '有人対応へ切替',
+      inquiry:           userText,
+      reservationStatus: '対応待ち',
+      aiSummary:         'キーワード検出により有人対応へ切替',
+      supportStatus:     '有人対応中',
+    });
+    saveConversationSafe(userId, userText, replyText, { latestRow: newRow ?? latestRow });
+    return reply(event.replyToken, replyText);
+  }
+
+  // ---- ⑤ 通常のAI問診（mode === 'ai'）-----------------------------------
 
   // OpenAI に問診を依頼（過去の会話履歴を渡す）
   let aiResult;
@@ -211,6 +282,7 @@ async function handleEvent(event) {
     stress:            aiResult.stress,
     deskWork:          aiResult.deskWork,
     aiSummary:         `[危険度:${aiResult.riskScore}] ${aiResult.aiSummary}`,
+    supportStatus:     'AI対応中',
   });
 
   // Redisに会話履歴と最新行番号を保存

@@ -121,4 +121,39 @@ async function updateUserData(userId, updates) {
   await getClient().set(key, { ...existing, ...updates }, { ex: TTL_SECONDS });
 }
 
-module.exports = { getConversationHistory, saveConversation, getUserData, updateUserData };
+// ---- 対応モード管理 ------------------------------------------------------
+//
+// モードは3種類:
+//   'ai'        : AI対応中（通常。OpenAIが自動返信）
+//   'human'     : 有人対応中（スタッフが対応。AIは返信しない）
+//   'completed' : 問診完了（対応終了）
+//
+// モードはユーザーデータの "mode" フィールドに保存される。
+
+/**
+ * ユーザーの現在の対応モードを取得する
+ * @param {string} userId
+ * @returns {Promise<string>} 'ai' / 'human' / 'completed'（未設定時は 'ai'）
+ */
+async function getMode(userId) {
+  const data = await getClient().get(`user:${userId}`);
+  return data?.mode ?? 'ai'; // デフォルトはAI対応
+}
+
+/**
+ * ユーザーの対応モードを変更する
+ * @param {string} userId
+ * @param {string} mode - 'ai' / 'human' / 'completed'
+ */
+async function setMode(userId, mode) {
+  await updateUserData(userId, { mode });
+}
+
+module.exports = {
+  getConversationHistory,
+  saveConversation,
+  getUserData,
+  updateUserData,
+  getMode,
+  setMode,
+};

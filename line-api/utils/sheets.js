@@ -9,10 +9,11 @@
  *   GOOGLE_CREDENTIALS_JSON : credentials.json の中身（Vercel本番）
  *   GOOGLE_CREDENTIALS_PATH : credentials.json のパス（ローカル開発、省略可）
  *
- * 列構成（A〜N列）:
+ * 列構成（A〜O列）:
  *   A: 日時　B: LINE表示名　C: 症状　D: 問診内容　E: 予約状況
  *   F: 姿勢タイプ　G: ストレス　H: 睡眠　I: デスクワーク　J: AI要約
  *   K: 来院　L: 継続　M: 離反　N: ユーザーID（行の特定用）
+ *   O: 対応ステータス（AI対応中 / 有人対応中 / 問診完了）
  *
  * 関数一覧:
  *   appendToSheet(params)              : 末尾に1行追記 → 行番号を返す
@@ -31,8 +32,8 @@ const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH
   ? path.resolve(process.env.GOOGLE_CREDENTIALS_PATH)
   : path.resolve(__dirname, '..', 'credentials.json');
 
-// シート名と範囲（N列まで使用）
-const SHEET_RANGE = 'シート1!A:N';
+// シート名と範囲（O列まで使用）
+const SHEET_RANGE = 'シート1!A:O';
 const SHEET_NAME  = 'シート1';
 
 // 認証スコープ
@@ -82,6 +83,7 @@ async function getAuthClient() {
  * @param {string} [params.visited]        - K列: 来院状況
  * @param {string} [params.continued]      - L列: 継続状況
  * @param {string} [params.churned]        - M列: 離反状況
+ * @param {string} [params.supportStatus]  - O列: 対応ステータス（AI対応中/有人対応中/問診完了）
  *
  * @returns {Promise<number|null>} 書き込んだ行番号（失敗時はnull）
  */
@@ -99,6 +101,7 @@ async function appendToSheet({
   visited,
   continued,
   churned,
+  supportStatus,
 }) {
   if (!SPREADSHEET_ID) {
     throw new Error('[sheets.js] 環境変数 SPREADSHEET_ID が設定されていません。');
@@ -120,6 +123,7 @@ async function appendToSheet({
     continued        ?? '',        // L: 継続
     churned          ?? '',        // M: 離反
     userId           ?? '',        // N: ユーザーID（行の特定に使用）
+    supportStatus    ?? 'AI対応中', // O: 対応ステータス
   ];
 
   const authClient = await getAuthClient();
@@ -182,4 +186,32 @@ async function updateUserStatus(rowNumber, { visited, continued, churned } = {})
   console.log(`[sheets.js] ステータス更新 row=${rowNumber}:`, { visited, continued, churned });
 }
 
-module.exports = { appendToSheet, updateUserStatus };
+/**
+ * 指定した行の O（対応ステータス）列を更新する
+ *
+ * @param {number} rowNumber     - 更新する行番号
+ * @param {string} supportStatus - 'AI対応中' / '有人対応中' / '問診完了'
+ */
+async function updateSupportStatus(rowNumber, supportStatus) {
+  if (!rowNumber) {
+    console.warn('[sheets.js] updateSupportStatus: rowNumber が未指定のためスキップ');
+    return;
+  }
+  if (!SPREADSHEET_ID) {
+    throw new Error('[sheets.js] 環境変数 SPREADSHEET_ID が設定されていません。');
+  }
+
+  const authClient = await getAuthClient();
+  const sheets     = google.sheets({ version: 'v4', auth: authClient });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId:    SPREADSHEET_ID,
+    range:            `${SHEET_NAME}!O${rowNumber}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody:      { values: [[supportStatus]] },
+  });
+
+  console.log(`[sheets.js] 対応ステータス更新 row=${rowNumber}: ${supportStatus}`);
+}
+
+module.exports = { appendToSheet, updateUserStatus, updateSupportStatus };
