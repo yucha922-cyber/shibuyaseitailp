@@ -58,7 +58,14 @@ const PATIENT_COLUMNS = [
   { key: 'visited',       header: '来院'           }, // L
   { key: 'continued',     header: '継続'           }, // M
   { key: 'churned',       header: '離反'           }, // N
-  { key: 'updatedAt',     header: '最終更新日時'   }, // O
+  // ---- CRM強化列（整体院向け）----
+  { key: 'firstVisitAt',  header: '初回来院日'     }, // O  来院分析
+  { key: 'lastVisitAt',   header: '最終来院日'     }, // P  再来管理
+  { key: 'staff',         header: '担当者'         }, // Q  誰が対応したか
+  { key: 'visitCount',    header: '予約回数'       }, // R  継続率分析
+  { key: 'ltv',           header: 'LTV'            }, // S  顧客価値分析
+  { key: 'referrer',      header: '紹介者'         }, // T  紹介管理
+  { key: 'updatedAt',     header: '最終更新日時'   }, // U
 ];
 
 // ---- 認証 ---------------------------------------------------------------
@@ -121,9 +128,15 @@ const PATIENT_LAST_COL = columnLetter(PATIENT_COLUMNS.length - 1);
  * @param {string} [patient.deskWork]    - デスクワーク
  * @param {string} [patient.reservation] - 予約状況
  * @param {string} [patient.supportStatus] - 対応ステータス
- * @param {string} [patient.visited]     - 来院
- * @param {string} [patient.continued]   - 継続
- * @param {string} [patient.churned]     - 離反
+ * @param {string} [patient.visited]      - 来院
+ * @param {string} [patient.continued]    - 継続
+ * @param {string} [patient.churned]      - 離反
+ * @param {string} [patient.firstVisitAt] - 初回来院日（来院分析）
+ * @param {string} [patient.lastVisitAt]  - 最終来院日（再来管理）
+ * @param {string} [patient.staff]        - 担当者
+ * @param {string|number} [patient.visitCount] - 予約回数（継続率分析）
+ * @param {string|number} [patient.ltv]   - LTV（顧客価値分析）
+ * @param {string} [patient.referrer]     - 紹介者（紹介管理）
  *
  * @returns {Promise<number|null>} 更新/作成した行番号
  *
@@ -204,6 +217,42 @@ async function upsertPatient(patient) {
   return rowIndex;
 }
 
+/**
+ * 患者マスターから1患者の現在データを取得する（無ければ null）
+ *
+ * 予約回数の加算や「初回来院日が未設定なら入れる」といった
+ * 既存値を踏まえた更新をしたいときに使う。
+ *
+ * @param {string} userId - LINE User ID
+ * @returns {Promise<Object|null>} PATIENT_COLUMNS の key をプロパティに持つオブジェクト
+ */
+async function getPatient(userId) {
+  if (!userId) return null;
+  const sheets = await getSheets();
+
+  const idColumn = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${PATIENT_SHEET}!A:A`,
+  });
+
+  const ids = idColumn.data.values ?? [];
+  let rowIndex = -1;
+  for (let i = 1; i < ids.length; i++) {
+    if (ids[i][0] === userId) { rowIndex = i + 1; break; }
+  }
+  if (rowIndex === -1) return null;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${PATIENT_SHEET}!A${rowIndex}:${PATIENT_LAST_COL}${rowIndex}`,
+  });
+  const cells = res.data.values?.[0] ?? [];
+
+  const patient = {};
+  PATIENT_COLUMNS.forEach((col, i) => { patient[col.key] = cells[i] ?? ''; });
+  return patient;
+}
+
 // ---- ② 対応履歴（append方式）-------------------------------------------
 
 /**
@@ -240,6 +289,7 @@ async function appendHistory({ userId, displayName, eventType, content }) {
 
 module.exports = {
   upsertPatient,
+  getPatient,
   appendHistory,
   PATIENT_COLUMNS, // セットアップ用にエクスポート
 };

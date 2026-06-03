@@ -23,7 +23,7 @@ const express = require('express');
 const line    = require('@line/bot-sdk');
 
 const { analyzeInquiry, generateInquirySummary } = require('../utils/openai');
-const { upsertPatient, appendHistory }           = require('../utils/sheets');
+const { upsertPatient, getPatient, appendHistory } = require('../utils/sheets');
 const { getQuestion, isCompleted, formatAnswers } = require('../utils/inquiry');
 const { RICH_MENU_ACTIONS }                                    = require('../utils/richMenu');
 const {
@@ -110,6 +110,30 @@ async function safe(label, fn) {
 const savePatient = (patient)      => safe('患者マスターupsert', () => upsertPatient(patient));
 // 対応履歴に1行追記
 const logHistory  = (log)          => safe('対応履歴追記',       () => appendHistory(log));
+
+/**
+ * 来院を記録し、CRM強化列（初回来院日 / 最終来院日 / 予約回数）を更新する。
+ *   - 初回来院日: まだ空のときだけ今日の日付を入れる
+ *   - 最終来院日: 毎回 今日の日付で上書き
+ *   - 予約回数  : 既存値 + 1
+ * @returns {Promise<Object>} 追加で upsert すべきフィールド
+ */
+async function buildVisitUpdate(userId) {
+  const today   = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
+  const current = await safe('患者マスター取得', () => getPatient(userId));
+
+  const prevCount = parseInt(current?.visitCount, 10);
+  const visitCount = (Number.isNaN(prevCount) ? 0 : prevCount) + 1;
+
+  return {
+    visited:      '済',
+    continued:    '継続',
+    lastVisitAt:  today,
+    visitCount,
+    // 初回来院日は未設定のときだけセット（既存値があれば触らない）
+    ...(current?.firstVisitAt ? {} : { firstVisitAt: today }),
+  };
+}
 const setModeSafe = (uid, mode)    => safe('モード変更',         () => setMode(uid, mode));
 const saveTalk    = (uid, u, a, ext) => safe('Redis保存',        () => saveConversation(uid, u, a, ext));
 
@@ -228,6 +252,9 @@ async function handleEvent(event) {
     replyText += `\n\n▼初回予約（3,500円）\n${RESERVE_URL}`;
   }
 
+  // 来院を検出したら CRM強化列（初回/最終来院日・予約回数）も計算
+  const visitUpdate = aiResult.visitDetected ? await buildVisitUpdate(userId) : {};
+
   // 患者マスターを upsert（最新の症状・分析で更新）
   savePatient({
     userId, displayName,
@@ -239,8 +266,9 @@ async function handleEvent(event) {
     deskWork:      aiResult.deskWork,
     reservation:   aiResult.needsReservation ? '予約推奨' : '未予約',
     supportStatus: 'AI対応中',
-    // 来院・離反を検出したら該当列も更新
-    ...(aiResult.visitDetected ? { visited: '済', continued: '継続' } : {}),
+    // 来院を検出したら来院・継続・初回/最終来院日・予約回数を更新
+    ...visitUpdate,
+    // 離反を検出したら該当列も更新
     ...(aiResult.churnDetected ? { churned: '離反' } : {}),
   });
 
