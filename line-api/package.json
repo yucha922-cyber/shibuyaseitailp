@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@line/bot-sdk": "^9.2.2",
+    "@upstash/redis": "^1.38.0",
     "express": "^4.19.2",
     "googleapis": "^173.0.0",
     "openai": "^6.41.0"
