@@ -1,30 +1,18 @@
 /**
  * OpenAI API ユーティリティ（NAORU整体 AI問診）
  *
- * 役割:
- *   LINEユーザーのメッセージと過去の会話履歴を受け取り、
- *   NAORU整体のコンセプトに沿った問診返答と分析データをJSON形式で返す。
+ * 関数一覧:
+ *   analyzeInquiry(message, history)  : 通常の1問1答AI返答
+ *   generateInquirySummary(answers)   : 6問終了後のサマリー・原因仮説・来院メリット生成
  *
  * 必要な環境変数:
  *   OPENAI_API_KEY : OpenAI のAPIキー
  *   OPENAI_MODEL   : 使用するモデル（省略時: gpt-4o-mini）
- *
- * 返り値（AIResponse）の構造:
- *   replyText        : LINEに送る自然な問診返答
- *   symptomType      : 症状タイプ（筋肉疲労型 / 神経圧迫型 など）
- *   postureType      : 姿勢タイプ（猫背型 / 反り腰型 など）
- *   stress           : ストレス傾向（高 / 中 / 低）
- *   deskWork         : デスクワーク傾向（高 / 中 / 低）
- *   riskScore        : 危険度スコア（1〜5）
- *   aiSummary        : スタッフ向けの内部メモ
- *   needsReservation : 予約を強く勧めるべきか（true/false）
- *   visitDetected    : 来院を報告するメッセージか（true/false）
- *   churnDetected    : キャンセル・離反を示すメッセージか（true/false）
  */
 
 const OpenAI = require('openai');
 
-// ---- OpenAI クライアント（遅延初期化）--------------------------------------
+// ---- クライアント（遅延初期化）------------------------------------------
 
 let _openai = null;
 
@@ -40,50 +28,34 @@ function getClient() {
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-// ---- システムプロンプト ---------------------------------------------------
-//
-// ここを変更するだけでAIの返答スタイル・分析軸を調整できます。
+// ---- システムプロンプト（通常問診用）--------------------------------------
 
-const SYSTEM_PROMPT = `
+const CHAT_SYSTEM_PROMPT = `
 あなたはNAORU整体 渋谷院のAI問診アシスタントです。
 
 【院のコンセプト】
-根本改善を最優先とする整体院です。症状を「姿勢だけ」と決めつけず、以下を総合的に評価します:
-- 筋肉（緊張・疲労・柔軟性）
-- 関節（可動域・炎症）
-- 神経（圧迫・過敏）
-- 血流（滞り・冷え）
-- 生活習慣（睡眠・食事・運動）
-- ストレス（精神的・身体的）
-- 姿勢（構造的なバランス）
+根本改善を最優先とする整体院です。症状の原因を「姿勢だけ」と決めつけず、
+筋肉・関節・神経・血流・生活習慣・ストレスを総合的に評価します。
 
 【あなたの役割】
-1. 過去のやり取りを踏まえ、文脈のある自然な問診を行う
-2. ユーザーの症状に共感し、原因の仮説を1〜2つ提示する
-3. 深掘りのための質問を1つだけ追加する（多すぎると離脱する）
-4. 危険度が高い場合（しびれ・激痛・発熱・急な頭痛など）は医療機関受診を促す
-5. 自然な流れでNAORU整体への予約を案内する（押しつけにならないよう注意）
-
-【来院・離反の検出】
-以下のような発言があった場合は対応するフラグをtrueにする:
-- visitDetected=true: 「行ってきました」「施術受けました」「来院しました」「ありがとうございました（施術後のお礼）」「楽になりました」
-- churnDetected=true: 「キャンセルします」「やめます」「行かないことにしました」「解約」「もういいです」
+- 過去のやり取りを踏まえた自然な問診を行う
+- 症状に共感し、原因の仮説を1〜2つ提示する
+- 深掘りのための質問を1つだけ追加する
+- 危険度が高い場合（しびれ・激痛・発熱など）は医療機関受診を促す
 
 【返答スタイル】
-- 過去のやり取りがある場合は「先ほどお伝えいただいた〜」など文脈を活かす
 - 親しみやすく、専門的すぎず
 - 断言せず「〜の可能性があります」のような表現を使う
 - 絵文字は使わない
-- 200文字以内（LINEで読みやすい長さ）
+- 200文字以内
 
-【必ずJSON形式のみで返すこと】他のテキストは一切含めないでください。
-
+必ずJSON形式のみで返してください:
 {
-  "replyText": "LINEに表示するユーザー向けの自然な問診返答（200文字以内）",
-  "symptomType": "症状タイプ（筋肉疲労型 / 神経圧迫型 / 血流不全型 / 関節可動域制限型 / 複合型 / 不明）",
-  "postureType": "姿勢タイプ（猫背型 / 反り腰型 / 側弯傾向 / 前傾骨盤型 / 後傾骨盤型 / 不明）",
-  "stress": "ストレス傾向（高 / 中 / 低 / 不明）",
-  "deskWork": "デスクワーク傾向（高 / 中 / 低 / 不明）",
+  "replyText": "返答テキスト（200文字以内）",
+  "symptomType": "症状タイプ（筋肉疲労型/神経圧迫型/血流不全型/関節可動域制限型/複合型/不明）",
+  "postureType": "姿勢タイプ（猫背型/反り腰型/側弯傾向/前傾骨盤型/後傾骨盤型/不明）",
+  "stress": "ストレス傾向（高/中/低/不明）",
+  "deskWork": "デスクワーク傾向（高/中/低/不明）",
   "riskScore": 危険度スコア（整数1〜5）,
   "aiSummary": "スタッフ向け内部メモ（1〜2文）",
   "needsReservation": true または false,
@@ -92,44 +64,61 @@ const SYSTEM_PROMPT = `
 }
 `.trim();
 
-// ---- メイン関数 -----------------------------------------------------------
+// ---- 問診サマリー用プロンプト -------------------------------------------
+
+const SUMMARY_SYSTEM_PROMPT = `
+あなたはNAORU整体 渋谷院のAIアシスタントです。
+
+患者の問診回答をもとに、以下を日本語で生成してください。
+
+【NAORU整体のコンセプト】
+根本改善重視。姿勢だけを原因と決めつけず、
+筋肉・関節・神経・血流・生活習慣・ストレスを総合的に考察してください。
+
+必ずJSON形式のみで返してください:
+{
+  "summary": "問診結果のまとめ（2〜3文。患者に読みやすい表現で）",
+  "hypothesis": "考えられる主な原因と仮説（2〜3文。複数の視点から）",
+  "visitMerit": "NAORU整体に来院するメリット（2〜3文。押しつけにならない表現で）",
+  "lineReply": "LINEで送る完成した返答文（summary + hypothesis + visitMerit を統合した自然な文章。予約URLの案内も含める。絵文字なし）",
+  "symptomType": "症状タイプ（筋肉疲労型/神経圧迫型/血流不全型/関節可動域制限型/複合型）",
+  "postureType": "姿勢タイプ（猫背型/反り腰型/側弯傾向/前傾骨盤型/後傾骨盤型/不明）",
+  "riskScore": 危険度スコア（整数1〜5）
+}
+`.trim();
+
+// ---- 関数 ---------------------------------------------------------------
 
 /**
- * ユーザーのメッセージをAIに送り、問診結果を返す
- *
- * @param {string} userMessage              - ユーザーがLINEで送ったテキスト
- * @param {Array}  [conversationHistory=[]] - 過去の会話履歴（OpenAI messages形式）
- * @returns {Promise<AIResponse>} AI分析結果
+ * 通常の1問1答AI問診
+ * @param {string} userMessage        - ユーザーの発言
+ * @param {Array}  [conversationHistory=[]] - 過去の会話履歴
+ * @returns {Promise<Object>} AI分析結果
  */
 async function analyzeInquiry(userMessage, conversationHistory = []) {
-  // メッセージ配列を構築: system → 過去の会話 → 今回のユーザー発言
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...conversationHistory, // ← 過去3往復分が入る
-    { role: 'user', content: `ユーザーからのメッセージ: ${userMessage}` },
+    { role: 'system', content: CHAT_SYSTEM_PROMPT },
+    ...conversationHistory,
+    { role: 'user',   content: `ユーザーからのメッセージ: ${userMessage}` },
   ];
 
   const completion = await getClient().chat.completions.create({
-    model: MODEL,
-    response_format: { type: 'json_object' }, // JSON形式を強制
+    model:           MODEL,
+    response_format: { type: 'json_object' },
     messages,
     max_tokens:  600,
     temperature: 0.7,
   });
 
-  const rawText = completion.choices[0]?.message?.content ?? '';
-
   let result;
   try {
-    result = JSON.parse(rawText);
+    result = JSON.parse(completion.choices[0]?.message?.content ?? '');
   } catch {
-    console.error('[openai.js] JSONパース失敗:', rawText);
-    return buildFallbackResponse();
+    return buildChatFallback();
   }
 
-  // 必須フィールドが欠けていた場合もフォールバックで補完
   return {
-    replyText:        result.replyText        ?? buildFallbackResponse().replyText,
+    replyText:        result.replyText        ?? buildChatFallback().replyText,
     symptomType:      result.symptomType      ?? '不明',
     postureType:      result.postureType      ?? '不明',
     stress:           result.stress           ?? '不明',
@@ -143,22 +132,81 @@ async function analyzeInquiry(userMessage, conversationHistory = []) {
 }
 
 /**
- * APIエラー時・解析失敗時のフォールバック
- * ユーザーにはエラーを露出させない
+ * 6問の問診回答をもとにAIサマリーを生成する
+ * @param {Object} answers - { symptom, duration, deskWork, sleep, pain, hospital }
+ * @param {string} reserveUrl - 予約URL（返答文に埋め込む）
+ * @returns {Promise<Object>} { summary, hypothesis, visitMerit, lineReply, symptomType, postureType, riskScore }
  */
-function buildFallbackResponse() {
+async function generateInquirySummary(answers, reserveUrl) {
+  // 回答を読みやすい形式に変換してプロンプトに渡す
+  const answersText = [
+    `症状: ${answers.symptom   ?? '未回答'}`,
+    `発症時期: ${answers.duration ?? '未回答'}`,
+    `デスクワーク: ${answers.deskWork ?? '未回答'}`,
+    `睡眠時間: ${answers.sleep    ?? '未回答'}`,
+    `痛みレベル: ${answers.pain    ?? '未回答'}/10`,
+    `病院受診歴: ${answers.hospital ?? '未回答'}`,
+  ].join('\n');
+
+  const userContent = `
+以下の問診回答をもとに分析してください。
+
+【問診回答】
+${answersText}
+
+予約URL: ${reserveUrl}
+`.trim();
+
+  const completion = await getClient().chat.completions.create({
+    model:           MODEL,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
+      { role: 'user',   content: userContent },
+    ],
+    max_tokens:  800,
+    temperature: 0.7,
+  });
+
+  let result;
+  try {
+    result = JSON.parse(completion.choices[0]?.message?.content ?? '');
+  } catch {
+    return buildSummaryFallback();
+  }
+
   return {
-    replyText:        'ご連絡ありがとうございます。\nいつ頃から、どのような時につらさを感じますか？',
-    symptomType:      '不明',
-    postureType:      '不明',
-    stress:           '不明',
-    deskWork:         '不明',
-    riskScore:        1,
-    aiSummary:        'AI問診エラー（フォールバック応答）',
-    needsReservation: false,
-    visitDetected:    false,
-    churnDetected:    false,
+    summary:      result.summary     ?? '',
+    hypothesis:   result.hypothesis  ?? '',
+    visitMerit:   result.visitMerit  ?? '',
+    lineReply:    result.lineReply   ?? buildSummaryFallback().lineReply,
+    symptomType:  result.symptomType ?? '不明',
+    postureType:  result.postureType ?? '不明',
+    riskScore:    result.riskScore   ?? 1,
   };
 }
 
-module.exports = { analyzeInquiry };
+// ---- フォールバック（エラー時）------------------------------------------
+
+function buildChatFallback() {
+  return {
+    replyText:        'ご連絡ありがとうございます。\nいつ頃から、どのような時につらさを感じますか？',
+    symptomType:      '不明', postureType: '不明', stress: '不明',
+    deskWork:         '不明', riskScore:   1,      aiSummary: 'AI問診エラー',
+    needsReservation: false,  visitDetected: false, churnDetected: false,
+  };
+}
+
+function buildSummaryFallback() {
+  return {
+    summary:     '問診が完了しました。詳しくはスタッフにご相談ください。',
+    hypothesis:  '',
+    visitMerit:  '',
+    lineReply:   '問診ありがとうございました。\nスタッフより詳しいご案内をいたします。',
+    symptomType: '不明',
+    postureType: '不明',
+    riskScore:   1,
+  };
+}
+
+module.exports = { analyzeInquiry, generateInquirySummary };
