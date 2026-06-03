@@ -27,7 +27,7 @@ const { upsertPatient, getPatient, appendHistory } = require('../utils/sheets');
 const { getQuestion, isCompleted, formatAnswers } = require('../utils/inquiry');
 const { RICH_MENU_ACTIONS }                                    = require('../utils/richMenu');
 const {
-  getUserData, getMode, setMode,
+  getUserData, getMode, setMode, updateUserData,
   getConversationHistory, saveConversation,
   getInquiryStep, startInquiry, saveAnswerAndAdvance,
   resetInquiry, getInquiryAnswers,
@@ -63,6 +63,12 @@ const COMPLETE_KEYWORDS = ['#完了', '＃完了', '対応完了'];
 
 // 問診キャンセルキーワード
 const CANCEL_KEYWORDS   = ['キャンセル', 'やめる', 'やめます', 'やめたい', 'もういい'];
+
+// 有人モードの自動復帰までの時間（時間単位）
+// スタッフが対応完了後にAIへ戻し忘れても、最後のやり取りから
+// この時間が経過すれば自動でAIモードに戻る。
+// ※ ここの数字を変えるだけで復帰時間を調整できます（例: 6 → 6時間）。
+const HUMAN_AUTO_REVERT_HOURS = 3;
 
 // ---- ルーティング --------------------------------------------------------
 
@@ -178,6 +184,21 @@ async function handleEvent(event) {
     mode        = userData.mode ?? 'ai';
     history     = hist;
     inquiryStep = step;
+
+    // ---- 有人モードの自動復帰 -------------------------------------------
+    // スタッフが対応完了後にAIへ戻し忘れても、最後のやり取りから
+    // 一定時間（HUMAN_AUTO_REVERT_HOURS）が経過していれば自動でAIモードに戻す。
+    if (mode === 'human' && userData.lastMessageAt) {
+      const elapsedMs   = Date.now() - new Date(userData.lastMessageAt).getTime();
+      const elapsedHour = elapsedMs / (1000 * 60 * 60);
+      if (elapsedHour >= HUMAN_AUTO_REVERT_HOURS) {
+        console.log(`[webhook] 有人モード自動復帰（${elapsedHour.toFixed(1)}h経過）: ${userId}`);
+        await setModeSafe(userId, 'ai');
+        await safe('問診リセット', () => resetInquiry(userId));
+        mode        = 'ai';
+        inquiryStep = 0;
+      }
+    }
   } catch (err) {
     console.error('[webhook] Redis取得失敗（AIモードで続行）:', err.message);
   }
@@ -201,6 +222,8 @@ async function handleEvent(event) {
   if (mode === 'human') {
     // 患者マスターは状態維持。発言は対応履歴にのみ記録
     logHistory({ userId, displayName, eventType: 'スタッフ対応中メッセージ', content: userText });
+    // 自動復帰タイマーをリセット（対応中はユーザー発言のたびに最終時刻を更新）
+    await safe('最終時刻更新', () => updateUserData(userId, { lastMessageAt: new Date().toISOString() }));
     return null; // AIは返信しない（スタッフが手動で返信）
   }
 
