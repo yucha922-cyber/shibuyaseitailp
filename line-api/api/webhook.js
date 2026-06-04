@@ -153,9 +153,9 @@ async function handleEvent(event) {
     const displayName = await getDisplayName(userId);
 
     // 患者マスターに登録（新規作成）
-    savePatient({ userId, displayName, supportStatus: 'AI対応中', reservation: '未予約' });
+    await savePatient({ userId, displayName, supportStatus: 'AI対応中', reservation: '未予約' });
     // 対応履歴に記録
-    logHistory({ userId, displayName, eventType: '友だち追加', content: '' });
+    await logHistory({ userId, displayName, eventType: '友だち追加', content: '' });
 
     return reply(
       event.replyToken,
@@ -212,14 +212,14 @@ async function handleEvent(event) {
     await safe('問診リセット', () => resetInquiry(userId));
     // 予約確定フラグも解除（AIを再び使えるようにする）
     await safe('予約確定解除', () => updateUserData(userId, { reserved: false }));
-    savePatient({ userId, displayName, supportStatus: 'AI対応中' });
+    await savePatient({ userId, displayName, supportStatus: 'AI対応中' });
     return reply(event.replyToken, 'AI問診を再開します。\nメニューの「簡単AI診断」か、お悩みをそのままメッセージで送ってください。');
   }
 
   // ---- ② 対応完了キーワード（スタッフ用）------------------------------
   if (COMPLETE_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'completed');
-    savePatient({ userId, displayName, supportStatus: '問診完了' });
+    await savePatient({ userId, displayName, supportStatus: '問診完了' });
     return null; // スタッフが最後のメッセージを送る
   }
 
@@ -227,7 +227,7 @@ async function handleEvent(event) {
   // 予約済みの方には自動AI返信をせず、スタッフが手動で対応する。
   // 解除するには #ai を送る（スタッフ）か、setReserved スクリプトで off にする。
   if (reserved) {
-    logHistory({ userId, displayName, eventType: '予約確定ユーザーメッセージ', content: userText });
+    await logHistory({ userId, displayName, eventType: '予約確定ユーザーメッセージ', content: userText });
     // 予約確定フラグのTTL（24時間）を延長し続ける（発言があるたびに更新）
     await safe('最終時刻更新', () => updateUserData(userId, { lastMessageAt: new Date().toISOString() }));
     return null; // AIは返信しない
@@ -236,7 +236,7 @@ async function handleEvent(event) {
   // ---- ③ 有人対応中 → AIスキップ、記録のみ ---------------------------
   if (mode === 'human') {
     // 患者マスターは状態維持。発言は対応履歴にのみ記録
-    logHistory({ userId, displayName, eventType: 'スタッフ対応中メッセージ', content: userText });
+    await logHistory({ userId, displayName, eventType: 'スタッフ対応中メッセージ', content: userText });
     // 自動復帰タイマーをリセット（対応中はユーザー発言のたびに最終時刻を更新）
     await safe('最終時刻更新', () => updateUserData(userId, { lastMessageAt: new Date().toISOString() }));
     return null; // AIは返信しない（スタッフが手動で返信）
@@ -263,9 +263,9 @@ async function handleEvent(event) {
     await setModeSafe(userId, 'human');
     const replyText = `スタッフが順次ご対応いたします。少々お待ちください。\n\nお急ぎの方はお電話でも承ります。\n${TEL}`;
     // 患者マスターを更新 + 対応履歴に記録
-    savePatient({ userId, displayName, supportStatus: '有人対応中', reservation: '対応待ち' });
-    logHistory({ userId, displayName, eventType: 'スタッフ相談', content: userText });
-    saveTalk(userId, userText, replyText, {});
+    await savePatient({ userId, displayName, supportStatus: '有人対応中', reservation: '対応待ち' });
+    await logHistory({ userId, displayName, eventType: 'スタッフ相談', content: userText });
+    await saveTalk(userId, userText, replyText, {});
     return reply(event.replyToken, replyText);
   }
 
@@ -294,7 +294,8 @@ async function handleEvent(event) {
   const visitUpdate = aiResult.visitDetected ? await buildVisitUpdate(userId) : {};
 
   // 患者マスターを upsert（最新の症状・分析で更新）
-  savePatient({
+  // ※ Vercelは応答を返すと関数が終了するため、reply前に必ず await する
+  await savePatient({
     userId, displayName,
     symptom:       aiResult.symptomType,
     inquiry:       userText,
@@ -311,11 +312,11 @@ async function handleEvent(event) {
   });
 
   // 対応履歴に記録
-  logHistory({ userId, displayName, eventType: 'AI問診（自由入力）', content: userText });
-  if (aiResult.visitDetected) logHistory({ userId, displayName, eventType: '来院', content: userText });
-  if (aiResult.churnDetected) logHistory({ userId, displayName, eventType: '離反', content: userText });
+  await logHistory({ userId, displayName, eventType: 'AI問診（自由入力）', content: userText });
+  if (aiResult.visitDetected) await logHistory({ userId, displayName, eventType: '来院', content: userText });
+  if (aiResult.churnDetected) await logHistory({ userId, displayName, eventType: '離反', content: userText });
 
-  saveTalk(userId, userText, aiResult.replyText, {});
+  await saveTalk(userId, userText, aiResult.replyText, {});
 
   return reply(event.replyToken, replyText);
 }
@@ -329,7 +330,7 @@ async function handleInquiryStart(replyToken, userId, displayName) {
   await safe('問診開始', () => startInquiry(userId));
 
   // 対応履歴に「AI問診開始」を記録
-  logHistory({ userId, displayName, eventType: 'AI問診開始', content: '' });
+  await logHistory({ userId, displayName, eventType: 'AI問診開始', content: '' });
 
   return reply(replyToken, [
     '簡単AI診断を始めます。\n全6問です。それぞれの質問にお答えください。\n（途中でやめる場合は「キャンセル」と送ってください）',
@@ -385,7 +386,8 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
   const inquiryText = formatAnswers(answers); // 全6問の回答をテキスト化
 
   // 患者マスターを upsert（問診結果で更新）
-  savePatient({
+  // ※ Vercelは応答を返すと関数が終了するため、reply前に必ず await する
+  await savePatient({
     userId,
     displayName,
     symptom:       summary.symptomType,
@@ -397,7 +399,7 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
   });
 
   // 対応履歴に「AI問診完了」を記録
-  logHistory({ userId, displayName, eventType: 'AI問診完了', content: inquiryText });
+  await logHistory({ userId, displayName, eventType: 'AI問診完了', content: inquiryText });
 
   // 問診ステップをリセット
   await safe('問診リセット', () => resetInquiry(userId));
