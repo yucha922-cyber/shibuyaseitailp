@@ -75,6 +75,17 @@ const SUMMARY_SYSTEM_PROMPT = `
 根本改善重視。姿勢だけを原因と決めつけず、
 筋肉・関節・神経・血流・生活習慣・ストレスを総合的に考察してください。
 
+【施術者向け要約（aiSummary）の形式】
+施術者が初回施術の仮説を立てられるよう、以下の情報を40〜60文字で1文にまとめてください。
+- 仕事・座位時間（デスクワーク状況）
+- 睡眠時間
+- ストレスレベル
+- 主な症状・発症時期
+- 推定される身体的問題（筋緊張部位・可動域制限など）
+
+形式例:
+『デスクワーク8時間以上。睡眠5時間未満。ストレス高め。慢性的肩こり。首肩周囲の筋緊張と胸郭可動性低下が疑われる。』
+
 必ずJSON形式のみで返してください:
 {
   "summary": "問診結果のまとめ（2〜3文。患者に読みやすい表現で）",
@@ -83,7 +94,8 @@ const SUMMARY_SYSTEM_PROMPT = `
   "lineReply": "LINEで送る完成した返答文（summary + hypothesis + visitMerit を統合した自然な文章。予約URLの案内も含める。絵文字なし）",
   "symptomType": "症状タイプ（筋肉疲労型/神経圧迫型/血流不全型/関節可動域制限型/複合型）",
   "postureType": "姿勢タイプ（猫背型/反り腰型/側弯傾向/前傾骨盤型/後傾骨盤型/不明）",
-  "riskScore": 危険度スコア（整数1〜5）
+  "riskScore": 危険度スコア（整数1〜5）,
+  "aiSummary": "施術者向け要約（上記の形式例に沿った40〜60文字の1文）"
 }
 `.trim();
 
@@ -132,20 +144,23 @@ async function analyzeInquiry(userMessage, conversationHistory = []) {
 }
 
 /**
- * 6問の問診回答をもとにAIサマリーを生成する
- * @param {Object} answers - { symptom, duration, deskWork, sleep, pain, hospital }
+ * 9問の問診回答をもとにAIサマリーを生成する
+ * @param {Object} answers - { symptom, duration, jobType, sittingHours, sleep, stress, pain, hospital, goal }
  * @param {string} reserveUrl - 予約URL（返答文に埋め込む）
- * @returns {Promise<Object>} { summary, hypothesis, visitMerit, lineReply, symptomType, postureType, riskScore }
+ * @returns {Promise<Object>} { summary, hypothesis, visitMerit, lineReply, symptomType, postureType, riskScore, aiSummary }
  */
 async function generateInquirySummary(answers, reserveUrl) {
   // 回答を読みやすい形式に変換してプロンプトに渡す
   const answersText = [
-    `症状: ${answers.symptom   ?? '未回答'}`,
+    `症状: ${answers.symptom      ?? '未回答'}`,
     `発症時期: ${answers.duration ?? '未回答'}`,
-    `デスクワーク: ${answers.deskWork ?? '未回答'}`,
+    `仕事内容: ${answers.jobType  ?? '未回答'}`,
+    `座位時間: ${answers.sittingHours ?? '未回答'}`,
     `睡眠時間: ${answers.sleep    ?? '未回答'}`,
-    `痛みレベル: ${answers.pain    ?? '未回答'}/10`,
-    `病院受診歴: ${answers.hospital ?? '未回答'}`,
+    `ストレスレベル: ${answers.stress ?? '未回答'}/5`,
+    `痛みレベル: ${answers.pain   ?? '未回答'}/10`,
+    `受診歴: ${answers.hospital   ?? '未回答'}`,
+    `改善したいこと: ${answers.goal ?? '未回答'}`,
   ].join('\n');
 
   const userContent = `
@@ -183,6 +198,7 @@ ${answersText}
     symptomType:  result.symptomType ?? '不明',
     postureType:  result.postureType ?? '不明',
     riskScore:    result.riskScore   ?? 1,
+    aiSummary:    result.aiSummary   ?? '',
   };
 }
 

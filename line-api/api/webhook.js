@@ -392,8 +392,17 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
     displayName,
     symptom:       summary.symptomType,
     inquiry:       inquiryText,
-    aiSummary:     `[危険度:${summary.riskScore}] ${summary.summary ?? ''} ${summary.hypothesis ?? ''}`.trim(),
+    // aiSummary = 施術者向け仮説要約（OpenAIが生成した1文）
+    aiSummary:     summary.aiSummary
+                     ? `[危険度:${summary.riskScore}] ${summary.aiSummary}`
+                     : `[危険度:${summary.riskScore}] ${summary.summary ?? ''}`.trim(),
     postureType:   summary.postureType,
+    // 9問の回答から各列にマッピング
+    stress:        answers.stress        ?? '',
+    sleep:         answers.sleep         ?? '',
+    deskWork:      answers.sittingHours
+                     ? `${answers.jobType ?? ''} / 座位${answers.sittingHours}`
+                     : (answers.jobType  ?? ''),
     reservation:   '問診完了',
     supportStatus: '問診完了',
   });
