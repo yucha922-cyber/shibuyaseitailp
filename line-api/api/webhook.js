@@ -407,7 +407,37 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
     supportStatus:        '問診完了',
   });
 
-  const summary = ai; // 返信用
+  // ---- ユーザーに送る診断結果メッセージをコード側で組み立てる ----------
+  // AIが失敗しても必ず分析内容が表示されるようにする。
+  const riskAdvice = {
+    高: '痛みが強い状態です。症状が長引く・悪化する場合は早めに専門院・医療機関の受診をおすすめします。',
+    中: '放置すると慢性化する可能性があります。早めのケアがおすすめです。',
+    低: '今は軽度ですが、根本改善のため早めのケアが効果的です。',
+  }[riskLevel] ?? '早めのケアがおすすめです。';
+
+  const resultMessage =
+`【AI分析結果】${answers.fullName ? `\n${answers.fullName} 様` : ''}
+
+■ 気になる症状
+${answers.symptom ?? '未回答'}（${answers.symptomDuration ?? '未回答'}）
+
+■ 姿勢タイプ：${ai.postureType}
+■ ストレス：${stressLevel} ／ 睡眠：${sleepLevel} ／ デスクワーク：${deskWorkLevel}
+■ 危険度：${riskLevel}
+
+■ 分析サマリー
+${aiSummary}
+
+■ あなたへのおすすめ施術
+「${ai.recommendedTreatment}」
+
+${riskAdvice}
+
+NAORU整体ではお身体の状態に合わせた根本改善をご提案します。
+ぜひ一度ご来院ください。
+
+▼初回予約（3,500円）
+${RESERVE_URL}`;
 
   // 対応履歴に「AI問診完了」を記録
   await logHistory({ userId, displayName, eventType: 'AI問診完了', content: inquiryText });
@@ -417,9 +447,9 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
 
   // Q10で replyToken を使い切っている場合は pushMessage で送る
   if (replyToken) {
-    return reply(replyToken, summary.lineReply);
+    return reply(replyToken, resultMessage);
   } else {
-    return client.pushMessage(userId, { type: 'text', text: summary.lineReply });
+    return client.pushMessage(userId, { type: 'text', text: resultMessage });
   }
 }
 
