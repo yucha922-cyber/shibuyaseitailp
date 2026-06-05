@@ -112,15 +112,14 @@ const SUMMARY_SYSTEM_PROMPT = `
 
 ---
 
+※ ストレス評価・睡眠評価・デスクワーク評価・危険度は【確定済み評価】の値をそのまま使い、
+　 それを踏まえて姿勢タイプ・推奨施術・要約・返答文を作成してください。
+
 必ずJSON形式のみで返してください:
 {
   "postureType":          "姿勢タイプ（猫背型/反り腰型/ストレートネック型/巻き肩型/骨盤不安定型/複合型）",
-  "stressLevel":          "ストレス評価（低/中/高）",
-  "sleepLevel":           "睡眠評価（良好/普通/不足）",
-  "deskWorkLevel":        "デスクワーク評価（高/低）",
-  "riskLevel":            "危険度（低/中/高）",
-  "recommendedTreatment": "推奨施術（6択から1つ）",
-  "aiSummary":            "AI要約（100文字以内の1〜2文）",
+  "recommendedTreatment": "推奨施術（首肩集中整体/腰痛整体/骨盤矯正/姿勢改善整体/自律神経整体/全身調整整体 から1つ）",
+  "aiSummary":            "AI要約（100文字以内の1〜2文。確定済み評価を反映）",
   "lineReply":            "LINEへの返答文（予約URL含む）"
 }
 `.trim();
@@ -175,7 +174,7 @@ async function analyzeInquiry(userMessage, conversationHistory = []) {
  * @param {string} reserveUrl - 予約URL（返答文に埋め込む）
  * @returns {Promise<Object>} { postureType, stressLevel, sleepLevel, deskWorkLevel, riskLevel, recommendedTreatment, aiSummary, lineReply }
  */
-async function generateInquirySummary(answers, reserveUrl) {
+async function generateInquirySummary(answers, reserveUrl, evals = {}) {
   const answersText = [
     `氏名: ${answers.fullName         ?? '未回答'}`,
     `症状: ${answers.symptom          ?? '未回答'}`,
@@ -188,11 +187,22 @@ async function generateInquirySummary(answers, reserveUrl) {
     `運動習慣: ${answers.exercise     ?? '未回答'}`,
   ].join('\n');
 
+  // コード側で確定済みの評価をAIに渡す（AIはこれを踏まえて姿勢・施術・要約を作る）
+  const evalsText = [
+    `ストレス評価: ${evals.stressLevel   ?? '不明'}`,
+    `睡眠評価: ${evals.sleepLevel         ?? '不明'}`,
+    `デスクワーク評価: ${evals.deskWorkLevel ?? '不明'}`,
+    `危険度: ${evals.riskLevel            ?? '不明'}`,
+  ].join('\n');
+
   const userContent = `
-以下の問診回答をもとに分析してください。
+以下の問診回答と評価をもとに分析してください。
 
 【問診回答】
 ${answersText}
+
+【確定済み評価】
+${evalsText}
 
 予約URL: ${reserveUrl}
 `.trim();
@@ -216,11 +226,7 @@ ${answersText}
   }
 
   return {
-    postureType:          result.postureType          ?? '不明',
-    stressLevel:          result.stressLevel          ?? '不明',
-    sleepLevel:           result.sleepLevel           ?? '不明',
-    deskWorkLevel:        result.deskWorkLevel        ?? '不明',
-    riskLevel:            result.riskLevel            ?? '不明',
+    postureType:          result.postureType          ?? '複合型',
     recommendedTreatment: result.recommendedTreatment ?? '全身調整整体',
     aiSummary:            result.aiSummary            ?? '',
     lineReply:            result.lineReply            ?? buildSummaryFallback().lineReply,
@@ -240,11 +246,7 @@ function buildChatFallback() {
 
 function buildSummaryFallback() {
   return {
-    postureType:          '不明',
-    stressLevel:          '不明',
-    sleepLevel:           '不明',
-    deskWorkLevel:        '不明',
-    riskLevel:            '不明',
+    postureType:          '複合型',
     recommendedTreatment: '全身調整整体',
     aiSummary:            '',
     lineReply:            '問診ありがとうございました。\nスタッフより詳しいご案内をいたします。',
