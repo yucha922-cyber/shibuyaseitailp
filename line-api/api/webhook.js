@@ -24,7 +24,8 @@ const line    = require('@line/bot-sdk');
 
 const { analyzeInquiry, generateInquirySummary } = require('../utils/openai');
 const { upsertPatient, getPatient, appendHistory } = require('../utils/sheets');
-const { getQuestion, isAnalysisStep, isCompleted, formatAnswers } = require('../utils/inquiry');
+const { getQuestion, isAnalysisStep, isCompleted, resolveAnswer, formatAnswers,
+        evaluateStress, evaluateRisk, evaluateSleep, evaluateDeskWork } = require('../utils/inquiry');
 const { RICH_MENU_ACTIONS }                                    = require('../utils/richMenu');
 const {
   getUserData, getMode, setMode, updateUserData,
@@ -334,9 +335,10 @@ async function handleInquiryStep(replyToken, userId, displayName, userText, curr
     return reply(replyToken, '問診の状態が不正でした。メニューの「簡単AI診断」から最初からやり直してください。');
   }
 
-  // 回答を保存して次のステップへ
+  // 回答を「1. 肩こり・首こり」形式に整えてから保存して次のステップへ
+  const resolved = resolveAnswer(currentQuestion, userText);
   const nextStep = await safe('回答保存',
-    () => saveAnswerAndAdvance(userId, currentQuestion.key, userText)
+    () => saveAnswerAndAdvance(userId, currentQuestion.key, resolved)
   ) ?? currentStep + 1;
 
   // Q10: 「AI分析を開始します」メッセージを送ってからサマリー生成
@@ -361,19 +363,30 @@ async function handleInquiryStep(replyToken, userId, displayName, userText, curr
 async function handleInquiryComplete(replyToken, userId, displayName) {
   const answers = await safe('回答取得', () => getInquiryAnswers(userId)) ?? {};
 
-  // OpenAI にサマリーを依頼
-  let summary;
+  // ---- 各評価はAIに依存せずコードで確定（必ず値が入る）-------------------
+  const stressLevel   = evaluateStress(answers.stress);
+  const riskLevel     = evaluateRisk(answers.pain);
+  const sleepLevel    = evaluateSleep(answers.sleepRaw);
+  const deskWorkLevel = evaluateDeskWork(answers.deskWorkRaw);
+
+  // ---- 姿勢タイプ・推奨施術・要約・返答文のみAIが生成 --------------------
+  // AIが失敗しても上記の評価は保存されるよう、AI部分は別途フォールバック。
+  let ai = {
+    postureType: '複合型',
+    recommendedTreatment: '全身調整整体',
+    aiSummary: '',
+    lineReply: `診断ありがとうございました。\nスタッフより詳しいご案内をいたします。\n\n▼初回予約（3,500円）\n${RESERVE_URL}`,
+  };
   try {
-    summary = await generateInquirySummary(answers, RESERVE_URL);
+    ai = await generateInquirySummary(answers, RESERVE_URL, { stressLevel, riskLevel, sleepLevel, deskWorkLevel });
   } catch (err) {
-    console.error('[webhook] サマリー生成失敗:', err.message);
-    summary = {
-      postureType: '不明', stressLevel: '不明', sleepLevel: '不明',
-      deskWorkLevel: '不明', riskLevel: '不明',
-      recommendedTreatment: '全身調整整体', aiSummary: '',
-      lineReply: `診断ありがとうございました。\nスタッフより詳しいご案内をいたします。\n\n▼初回予約（3,500円）\n${RESERVE_URL}`,
-    };
+    console.error('[webhook] サマリー生成失敗（評価値は保存されます）:', err.message);
   }
+
+  // AI要約が空ならコード側で簡易要約を組み立てる（空欄を防ぐ）
+  const aiSummary = ai.aiSummary && ai.aiSummary.trim()
+    ? ai.aiSummary
+    : `${answers.symptom ?? ''}（${answers.symptomDuration ?? ''}）。デスクワーク${deskWorkLevel}・睡眠${sleepLevel}・ストレス${stressLevel}・危険度${riskLevel}。`;
 
   const inquiryText = formatAnswers(answers);
 
@@ -381,18 +394,20 @@ async function handleInquiryComplete(replyToken, userId, displayName) {
   await savePatient({
     userId,
     displayName,
-    fullName:             answers.fullName         ?? '',
-    symptom:              answers.symptom          ?? '',
-    symptomDuration:      answers.symptomDuration  ?? '',
-    postureType:          summary.postureType,
-    stress:               summary.stressLevel,
-    sleep:                summary.sleepLevel,
-    deskWork:             summary.deskWorkLevel,
-    riskLevel:            summary.riskLevel,
-    aiSummary:            summary.aiSummary,
-    recommendedTreatment: summary.recommendedTreatment,
+    fullName:             answers.fullName        ?? '',
+    symptom:              answers.symptom         ?? '',
+    symptomDuration:      answers.symptomDuration ?? '',
+    postureType:          ai.postureType,
+    stress:               stressLevel,
+    sleep:                sleepLevel,
+    deskWork:             deskWorkLevel,
+    riskLevel:            riskLevel,
+    aiSummary:            aiSummary,
+    recommendedTreatment: ai.recommendedTreatment,
     supportStatus:        '問診完了',
   });
+
+  const summary = ai; // 返信用
 
   // 対応履歴に「AI問診完了」を記録
   await logHistory({ userId, displayName, eventType: 'AI問診完了', content: inquiryText });
