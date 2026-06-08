@@ -102,37 +102,169 @@
   </div>
 </section>
 
-<!-- ================== Worries (共感) ==================
-  背景画像は assets/img/worries/bg.jpg に配置してください。
-  画像が見つからない場合は assets/img/worries/placeholder.svg がフォールバック表示されます。
+<!-- ================== Before / After ==================
+  各事例の画像は assets/img/beforeafter/ に配置してください。
+  ファイル名: case1-before.jpg / case1-after.jpg / case2-before.jpg /
+  case2-after.jpg / case3-before.jpg / case3-after.jpg
+  画像が見つからない場合は placeholder.svg がフォールバック表示されます。
 -->
-<section class="section worries">
-  <div class="worries__bg" aria-hidden="true">
-    <img
-      src="assets/img/worries/bg.jpg"
-      alt=""
-      loading="lazy"
-      onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
-  </div>
-  <div class="worries__overlay" aria-hidden="true"></div>
-
+<section class="section beforeafter" id="beforeafter">
   <div class="container">
     <div class="section-head reveal">
-      <h2 class="section-head__title">こんなお悩み、ありませんか？</h2>
+      <div class="section-head__label">Before &amp; After</div>
+      <h2 class="section-head__title">施術前後の変化を、ご覧ください。</h2>
     </div>
 
-    <ul class="worries__list reveal">
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>デスクワークで一日中、肩や首が重い</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>マッサージに行っても、3日でまた戻ってしまう</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>写真に写る自分の姿勢に、最近ハッとした</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>朝起きた瞬間から、すでに腰が張っている</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>鏡を見るとスマホ首・猫背が気になる</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>整骨院に通ったが、効果がわからず辞めた経験がある</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>何が原因か分からないまま、不調と付き合っている</li>
-      <li class="worries__item"><span class="worries__check" aria-hidden="true"></span>仕事のパフォーマンスが、身体の重さに引っ張られている</li>
-    </ul>
+    <div class="beforeafter__grid">
+      <div class="beforeafter__card reveal">
+        <div class="beforeafter__images">
+          <div class="beforeafter__image" data-label="BEFORE">
+            <img src="assets/img/beforeafter/case1-before.jpg" alt="施術前の横向き姿勢（30代男性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+          <div class="beforeafter__image" data-label="AFTER">
+            <img src="assets/img/beforeafter/case1-after.jpg" alt="施術後の横向き姿勢（30代男性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+        </div>
+        <div class="beforeafter__caption">
+          <div class="beforeafter__attr">30代男性／IT企業</div>
+          <div class="beforeafter__data">骨盤前傾角：18° → 12°<br>頭部前方位：32mm → 18mm</div>
+        </div>
+      </div>
 
-    <p class="worries__footer reveal">ひとつでも当てはまった方は、ぜひこの先を読み進めてください。</p>
+      <div class="beforeafter__card reveal">
+        <div class="beforeafter__images">
+          <div class="beforeafter__image" data-label="BEFORE">
+            <img src="assets/img/beforeafter/case2-before.jpg" alt="施術前の横向き姿勢（40代女性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+          <div class="beforeafter__image" data-label="AFTER">
+            <img src="assets/img/beforeafter/case2-after.jpg" alt="施術後の横向き姿勢（40代女性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+        </div>
+        <div class="beforeafter__caption">
+          <div class="beforeafter__attr">40代女性／広告代理店</div>
+          <div class="beforeafter__data">肩の高さ差：14mm → 4mm<br>骨盤傾斜：左8° → 左2°</div>
+        </div>
+      </div>
+
+      <div class="beforeafter__card reveal">
+        <div class="beforeafter__images">
+          <div class="beforeafter__image" data-label="BEFORE">
+            <img src="assets/img/beforeafter/case3-before.jpg" alt="施術前の横向き姿勢（50代男性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+          <div class="beforeafter__image" data-label="AFTER">
+            <img src="assets/img/beforeafter/case3-after.jpg" alt="施術後の横向き姿勢（50代男性）" loading="lazy"
+              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
+          </div>
+        </div>
+        <div class="beforeafter__caption">
+          <div class="beforeafter__attr">50代男性／経営者</div>
+          <div class="beforeafter__data">背中の丸み：26° → 16°<br>頭部前方位：40mm → 22mm</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="beforeafter__disclaimer">
+      ※掲載写真は、お客様ご本人の同意を得て撮影したものです。施術前後の変化を記録したもので、施術の結果には個人差があり、本写真は同様の変化を保証するものではありません。また、本写真は症状の改善・治癒を示すものではありません。
+    </p>
+  </div>
+</section>
+
+<!-- ================== Worries (共感) ==================
+  メイン写真: assets/img/worries/person.jpg（デスクワーク・疲労感のある人物写真）
+  シーン写真: assets/img/worries/scene-shoulder.jpg / scene-back.jpg / scene-posture.jpg
+  画像が見つからない場合は placeholder.svg がフォールバック表示されます。
+-->
+<section class="section worries-new" id="worries">
+  <div class="container">
+    <div class="worries-new__head reveal">
+      <h2 class="worries-new__headline">こんなお悩み、<br>ありませんか？</h2>
+      <p class="worries-new__sub">渋谷院には、こうした不調を抱えた方が毎日来院されています。</p>
+    </div>
+
+    <div class="worries-new__split">
+      <!-- 左: 写真カラム -->
+      <div class="worries-new__photo-col reveal">
+        <div class="worries-new__photo-wrap">
+          <img
+            src="assets/img/worries/person.jpg"
+            alt="デスクワークで肩こりに悩む様子"
+            loading="lazy"
+            onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
+          <div class="worries-new__stat">
+            <span class="worries-new__stat-num">300<small>名以上</small></span>
+            <span class="worries-new__stat-label">毎月の来院数（渋谷院）</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右: 悩みリスト＋CTA -->
+      <div class="worries-new__content-col reveal">
+        <ul class="worries-new__list">
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            デスクワークで一日中、肩や首が重い
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            マッサージに行っても、3日でまた戻ってしまう
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            写真に写る自分の姿勢に、最近ハッとした
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            朝起きた瞬間から、すでに腰が張っている
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            鏡を見るとスマホ首・猫背が気になる
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            整骨院に通ったが、効果がわからず辞めた経験がある
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            何が原因か分からないまま、不調と付き合っている
+          </li>
+          <li class="worries-new__item">
+            <span class="worries-new__check" aria-hidden="true"></span>
+            仕事のパフォーマンスが、身体の重さに引っ張られている
+          </li>
+        </ul>
+
+        <div class="worries-new__cta-block">
+          <p class="worries-new__cta-lead">ひとつでも当てはまった方へ —</p>
+          <a href="#" data-line-link target="_blank" rel="noopener noreferrer" class="btn btn--line">LINEであなたの症状を無料AI診断</a>
+          <p class="worries-new__cta-note">無料・1分で完了・友だち追加するだけ</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- シーン写真3枚 -->
+    <div class="worries-new__scenes reveal">
+      <figure class="worries-new__scene">
+        <img src="assets/img/worries/scene-shoulder.jpg" alt="首・肩こりの施術風景" loading="lazy"
+          onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
+        <figcaption>首・肩こり</figcaption>
+      </figure>
+      <figure class="worries-new__scene">
+        <img src="assets/img/worries/scene-back.jpg" alt="腰痛・骨盤の施術風景" loading="lazy"
+          onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
+        <figcaption>腰痛・骨盤</figcaption>
+      </figure>
+      <figure class="worries-new__scene">
+        <img src="assets/img/worries/scene-posture.jpg" alt="姿勢改善の施術風景" loading="lazy"
+          onerror="this.onerror=null;this.src='assets/img/worries/placeholder.svg';">
+        <figcaption>姿勢の乱れ</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
@@ -265,78 +397,6 @@
           onerror="this.onerror=null;this.src='assets/img/approach/placeholder3.svg';">
       </div>
     </div>
-  </div>
-</section>
-
-<!-- ================== Before / After ==================
-  各事例の画像は assets/img/beforeafter/ に配置してください。
-  ファイル名: case1-before.jpg / case1-after.jpg / case2-before.jpg /
-  case2-after.jpg / case3-before.jpg / case3-after.jpg
-  画像が見つからない場合は placeholder.svg がフォールバック表示されます。
--->
-<section class="section beforeafter" id="beforeafter">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-head__label">Before &amp; After</div>
-      <h2 class="section-head__title">施術前後の変化を、ご覧ください。</h2>
-    </div>
-
-    <div class="beforeafter__grid">
-      <div class="beforeafter__card reveal">
-        <div class="beforeafter__images">
-          <div class="beforeafter__image" data-label="BEFORE">
-            <img src="assets/img/beforeafter/case1-before.jpg" alt="施術前の横向き姿勢（30代男性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-          <div class="beforeafter__image" data-label="AFTER">
-            <img src="assets/img/beforeafter/case1-after.jpg" alt="施術後の横向き姿勢（30代男性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-        </div>
-        <div class="beforeafter__caption">
-          <div class="beforeafter__attr">30代男性／IT企業</div>
-          <div class="beforeafter__data">骨盤前傾角：18° → 12°<br>頭部前方位：32mm → 18mm</div>
-        </div>
-      </div>
-
-      <div class="beforeafter__card reveal">
-        <div class="beforeafter__images">
-          <div class="beforeafter__image" data-label="BEFORE">
-            <img src="assets/img/beforeafter/case2-before.jpg" alt="施術前の横向き姿勢（40代女性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-          <div class="beforeafter__image" data-label="AFTER">
-            <img src="assets/img/beforeafter/case2-after.jpg" alt="施術後の横向き姿勢（40代女性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-        </div>
-        <div class="beforeafter__caption">
-          <div class="beforeafter__attr">40代女性／広告代理店</div>
-          <div class="beforeafter__data">肩の高さ差：14mm → 4mm<br>骨盤傾斜：左8° → 左2°</div>
-        </div>
-      </div>
-
-      <div class="beforeafter__card reveal">
-        <div class="beforeafter__images">
-          <div class="beforeafter__image" data-label="BEFORE">
-            <img src="assets/img/beforeafter/case3-before.jpg" alt="施術前の横向き姿勢（50代男性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-          <div class="beforeafter__image" data-label="AFTER">
-            <img src="assets/img/beforeafter/case3-after.jpg" alt="施術後の横向き姿勢（50代男性）" loading="lazy"
-              onerror="this.onerror=null;this.src='assets/img/beforeafter/placeholder.svg';">
-          </div>
-        </div>
-        <div class="beforeafter__caption">
-          <div class="beforeafter__attr">50代男性／経営者</div>
-          <div class="beforeafter__data">背中の丸み：26° → 16°<br>頭部前方位：40mm → 22mm</div>
-        </div>
-      </div>
-    </div>
-
-    <p class="beforeafter__disclaimer">
-      ※掲載写真は、お客様ご本人の同意を得て撮影したものです。施術前後の変化を記録したもので、施術の結果には個人差があり、本写真は同様の変化を保証するものではありません。また、本写真は症状の改善・治癒を示すものではありません。
-    </p>
   </div>
 </section>
 

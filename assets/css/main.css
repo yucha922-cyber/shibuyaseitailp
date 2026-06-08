@@ -411,6 +411,210 @@ ul, ol { list-style: none; }
 }
 
 /* ----------------------------------------------------------------
+   7c. Worries New (写真分割レイアウト版)
+---------------------------------------------------------------- */
+.worries-new {
+  background: #fff;
+  padding-top: 72px;
+  padding-bottom: 80px;
+}
+.worries-new__head {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.worries-new__headline {
+  font-family: var(--ff-serif);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--c-primary);
+  line-height: 1.35;
+  margin-bottom: 16px;
+}
+.worries-new__sub {
+  font-size: 15px;
+  color: var(--c-text-muted);
+}
+
+/* Split layout */
+.worries-new__split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: start;
+  margin-bottom: 56px;
+}
+@media (min-width: 768px) {
+  .worries-new__split {
+    grid-template-columns: 5fr 7fr;
+    gap: 56px;
+    align-items: stretch;
+  }
+}
+
+/* Photo column */
+.worries-new__photo-col { position: relative; }
+.worries-new__photo-wrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 25, 45, 0.18);
+  aspect-ratio: 4 / 5;
+}
+.worries-new__photo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.worries-new__stat {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(15, 25, 45, 0.88);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 14px 20px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.2;
+}
+.worries-new__stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--c-accent);
+  letter-spacing: -0.02em;
+}
+.worries-new__stat-num small {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.worries-new__stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.04em;
+}
+
+/* Content column */
+.worries-new__content-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 32px;
+}
+.worries-new__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.worries-new__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #f9fbfc;
+  border-radius: 10px;
+  border-left: 3px solid var(--c-accent);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-primary);
+  transition: background 0.2s, transform 0.2s;
+}
+.worries-new__item:hover {
+  background: #f0f7f8;
+  transform: translateX(4px);
+}
+.worries-new__check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4ba9b2 0%, #2c8a93 100%);
+  box-shadow: 0 4px 12px rgba(44, 138, 147, 0.35);
+  display: grid;
+  place-items: center;
+}
+.worries-new__check::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='5 13 10 18 19 7'/></svg>") center/contain no-repeat;
+}
+
+/* CTA block */
+.worries-new__cta-block {
+  background: linear-gradient(135deg, #f0f9fa 0%, #e8f5f6 100%);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  border: 1px solid rgba(44, 138, 147, 0.2);
+}
+.worries-new__cta-lead {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-primary);
+  margin-bottom: 16px;
+}
+.worries-new__cta-block .btn--line {
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+.worries-new__cta-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+/* Scene photos row */
+.worries-new__scenes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.worries-new__scene {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 25, 45, 0.1);
+  position: relative;
+}
+.worries-new__scene img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.worries-new__scene:hover img { transform: scale(1.04); }
+.worries-new__scene figcaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(0deg, rgba(15,25,45,0.75) 0%, transparent 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 20px 14px 12px;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 480px) {
+  .worries-new__scenes { grid-template-columns: 1fr; }
+  .worries-new__scene figcaption { position: static; background: var(--c-primary); padding: 10px 14px; }
+}
+@media (min-width: 768px) {
+  .worries-new__item { font-size: 15px; }
+  .worries-new__check { width: 32px; height: 32px; }
+  .worries-new__check::after { width: 16px; height: 16px; }
+}
+
+/* ----------------------------------------------------------------
    7b. Section Divider (Worries → Risks)
 ---------------------------------------------------------------- */
 .section-divider {
