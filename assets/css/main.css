@@ -586,8 +586,9 @@ ul, ol { list-style: none; }
 }
 .worries-new__scene img {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
+  object-position: center 22%;
   display: block;
   transition: transform 0.4s ease;
 }
