@@ -952,7 +952,7 @@ ul, ol { list-style: none; }
 }
 .trusted__media img {
   width: 100%;
-  max-width: 230px;          /* 元のスクショ全体を小さめに */
+  max-width: 200px;          /* 元のスクショ全体を小さめに */
   height: auto;
   display: block;
   margin: 0 auto;
@@ -975,7 +975,7 @@ ul, ol { list-style: none; }
     font-size: 23px;
     white-space: nowrap;     /* 1行に収める */
   }
-  .trusted__media img { max-width: 250px; }
+  .trusted__media img { max-width: 220px; }
 }
 
 /* ----------------------------------------------------------------
