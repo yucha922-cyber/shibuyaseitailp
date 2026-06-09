@@ -911,48 +911,61 @@ ul, ol { list-style: none; }
    控えめ・高級感・コンパクト。CTAなし。
 ---------------------------------------------------------------- */
 .trusted {
-  background: var(--c-bg);
+  /* 深いネイビーのグラデーションで高級感・セレブリティ感を演出 */
+  background:
+    radial-gradient(120% 120% at 85% 0%, rgba(201,168,106,0.10) 0%, rgba(201,168,106,0) 45%),
+    linear-gradient(135deg, #14223a 0%, #1d2c49 55%, #16243d 100%);
 }
 .trusted__inner {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 32px;
+  gap: 24px;
   align-items: center;
-  max-width: 980px;
+  max-width: 760px;
   margin: 0 auto;
 }
-.trusted__title {
-  font-size: 22px;
-  line-height: 1.55;
-  color: var(--c-primary);
+.trusted__label {
+  font-size: 12px;
+  letter-spacing: 0.22em;
   font-weight: 700;
-  margin: 10px 0 18px;
+  color: #c9a86a;            /* ゴールド系アクセント */
+  text-transform: uppercase;
+}
+.trusted__title {
+  font-size: 19px;
+  line-height: 1.55;
+  color: #ffffff;
+  font-weight: 700;
+  margin: 10px 0 14px;
   letter-spacing: 0.02em;
 }
 .trusted__text {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.9;
-  color: var(--c-text-muted);
+  color: rgba(255,255,255,0.72);
 }
 .trusted__media {
   text-align: center;
 }
 .trusted__media img {
   width: 100%;
-  max-width: 360px;
+  max-width: 150px;          /* おまけ程度の小さめサイズ */
   height: auto;
-  border-radius: 18px;
-  box-shadow: 0 14px 36px var(--c-shadow);
-  border: 1px solid var(--c-border-soft);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.14);
 }
 
 @media (min-width: 768px) {
   .trusted__inner {
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 56px;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
   }
-  .trusted__title { font-size: 26px; }
-  .trusted__media img { max-width: 100%; }
+  .trusted__title {
+    font-size: 21px;
+    white-space: nowrap;     /* 1行に収める */
+  }
+  .trusted__media img { max-width: 170px; }
 }
 
 /* ----------------------------------------------------------------
