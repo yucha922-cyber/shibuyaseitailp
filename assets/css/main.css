@@ -611,7 +611,9 @@ ul, ol { list-style: none; }
 .worries-new__scenes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
+  max-width: 760px;          /* 全体を小さめに */
+  margin: 0 auto;
 }
 .worries-new__scene {
   margin: 0;
@@ -629,9 +631,9 @@ ul, ol { list-style: none; }
 }
 .worries-new__scene img {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4 / 3;       /* 縦長→横長に変更 */
   object-fit: cover;
-  object-position: center 22%;
+  object-position: center 43%;  /* 施術者と患者が収まる構図 */
   display: block;
   transition: transform 0.4s ease;
 }
