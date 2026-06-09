@@ -917,10 +917,14 @@ ul, ol { list-style: none; }
     linear-gradient(135deg, #14223a 0%, #1d2c49 55%, #16243d 100%);
 }
 .trusted__inner {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
+  max-width: 1080px;         /* ページ幅いっぱいに横長展開 */
+  margin: 0 auto;
+}
+.trusted__head {
   max-width: 760px;
   margin: 0 auto;
 }
@@ -932,7 +936,7 @@ ul, ol { list-style: none; }
   text-transform: uppercase;
 }
 .trusted__title {
-  font-size: 19px;
+  font-size: 20px;
   line-height: 1.55;
   color: #ffffff;
   font-weight: 700;
@@ -945,27 +949,25 @@ ul, ol { list-style: none; }
   color: rgba(255,255,255,0.72);
 }
 .trusted__media {
-  text-align: center;
+  width: 100%;
+  margin-top: 26px;
 }
 .trusted__media img {
   width: 100%;
-  max-width: 150px;          /* おまけ程度の小さめサイズ */
+  max-width: 100%;           /* 横長バナーを全幅で見せる */
   height: auto;
-  border-radius: 14px;
+  display: block;
+  border-radius: 12px;
   box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 @media (min-width: 768px) {
-  .trusted__inner {
-    grid-template-columns: 1fr auto;
-    gap: 48px;
-  }
   .trusted__title {
-    font-size: 21px;
+    font-size: 23px;
     white-space: nowrap;     /* 1行に収める */
   }
-  .trusted__media img { max-width: 170px; }
+  .trusted__media { margin-top: 32px; }
 }
 
 /* ----------------------------------------------------------------
