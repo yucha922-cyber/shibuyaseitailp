@@ -142,32 +142,23 @@ ul, ol { list-style: none; }
 }
 .site-logo {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-}
-.site-logo__mark {
-  width: 28px;
-  height: 28px;
-  background: var(--c-primary);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  text-decoration: none;
 }
 .site-logo__name {
-  font-family: var(--font-serif);
-  font-weight: 600;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
   color: var(--c-primary);
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
 }
 .site-logo__sub {
-  font-size: 10px;
-  color: var(--c-text-muted);
-  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-accent);
+  letter-spacing: 0.12em;
 }
 .header-cta {
   display: none;
