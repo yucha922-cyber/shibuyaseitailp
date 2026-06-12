@@ -202,11 +202,14 @@ ul, ol { list-style: none; }
   width: 100%;
   height: auto;
   display: block;
-  /* fv-main.jpg は縦長デザイン画像。全体を切らずに表示し、
-     大画面では中央に最大幅で配置する */
+  /* モバイル: fv-main.jpg 縦長を中央・最大幅560pxで表示 */
   max-width: 560px;
   margin: 0 auto;
   background: linear-gradient(135deg, #e8f3f4 0%, #d4e8eb 100%);
+}
+/* PC: fv-pc.jpg 横長を全幅表示 */
+@media (min-width: 768px) {
+  .fv__image { max-width: 100%; }
 }
 
 /* FV直下のCTA帯 */

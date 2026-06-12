@@ -81,19 +81,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </header>
 
 <!-- ================== First View ==================
-  ファーストビュー画像は assets/img/fv/fv-main.jpg に配置してください。
-  画像全体がNAORU予約サイト（reserve.naoru.info）への外部リンク（別タブ）です。
+  PC用: assets/img/fv/fv-pc.jpg（横長）
+  モバイル用: assets/img/fv/fv-main.jpg（縦長）
 -->
 <section class="fv" id="top">
   <a href="https://reserve.naoru.info/" target="_blank" rel="noopener noreferrer" class="fv__image-link" aria-label="つらい肩こりを根本改善｜初回限定3,500円キャンペーン｜ご予約へ">
-    <img
-      src="assets/img/fv/fv-main.jpg"
-      alt="NAORU整体 渋谷院｜つらい肩こりを根本改善｜AI姿勢検査＋整体｜初めての方限定キャンペーン 通常13,200円→3,500円（税込）"
-      class="fv__image"
-      width="1024"
-      height="1536"
-      fetchpriority="high"
-      onerror="this.onerror=null;this.src='assets/img/fv/placeholder.svg';">
+    <picture>
+      <source media="(min-width: 768px)" srcset="assets/img/fv/fv-pc.jpg" width="1535" height="1024">
+      <img
+        src="assets/img/fv/fv-main.jpg"
+        alt="NAORU整体 渋谷院｜つらい肩こりを根本改善｜AI姿勢検査＋整体｜初めての方限定キャンペーン 通常13,200円→3,500円（税込）"
+        class="fv__image"
+        width="1024"
+        height="1536"
+        fetchpriority="high"
+        onerror="this.onerror=null;this.src='assets/img/fv/placeholder.svg';">
+    </picture>
   </a>
 </section>
 
