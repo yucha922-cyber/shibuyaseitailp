@@ -30,7 +30,7 @@ const { upsertPatient, getPatient, appendHistory } = require('../utils/sheets');
 const { getQuestion, isAnalysisStep, isCompleted, resolveAnswer, formatAnswers,
         evaluateStress, evaluateRisk, evaluateSleep, evaluateDeskWork } = require('../utils/inquiry');
 const { RICH_MENU_ACTIONS }                                    = require('../utils/richMenu');
-const { handleCancelFlow }                                     = require('../utils/cancelFlow');
+const { handleCancelFlow, isCancelFlowTimedOut }               = require('../utils/cancelFlow');
 const {
   getUserData, getMode, setMode, updateUserData,
   getConversationHistory, saveConversation,
@@ -65,6 +65,11 @@ const RESET_KEYWORDS    = ['#ai', '＃ai', 'AI再開', 'AIに戻す'];
 
 // 問診完了にするキーワード（スタッフ用）
 const COMPLETE_KEYWORDS = ['#完了', '＃完了', '対応完了'];
+
+// キャンセルフロー手動解除コマンド（スタッフ用）
+// スタッフが LINE OA Manager から送信すると cancelFlowState をクリアできる。
+// 使い方: スタッフがトーク画面に "#cancel解除" と入力して送信する。
+const CANCEL_FLOW_RESET_KEYWORDS = ['#cancel解除', '＃cancel解除', '#キャンセル解除', '＃キャンセル解除'];
 
 // 問診キャンセルキーワード
 const CANCEL_KEYWORDS   = ['キャンセル', 'やめる', 'やめます', 'やめたい', 'もういい'];
@@ -200,6 +205,14 @@ async function handleEvent(event) {
     inquiryStep     = step;
     reserved        = userData.reserved === true;
     cancelFlowState = userData.cancelFlowState ?? null;
+    // 条件2: タイムアウト判定 — 最後にフロー開始から一定時間経過していれば自動クリア
+    if (cancelFlowState !== null && isCancelFlowTimedOut(userData.cancelFlowStartAt)) {
+      console.log(`[webhook] cancelFlow タイムアウト自動クリア: ${userId}`);
+      await safe('cancelFlow タイムアウトクリア', () =>
+        updateUserData(userId, { cancelFlowState: null })
+      );
+      cancelFlowState = null;
+    }
 
     // ---- 有人モードの自動復帰 -------------------------------------------
     // スタッフが対応完了後にAIへ戻し忘れても、最後のやり取りから
@@ -262,9 +275,13 @@ async function handleEvent(event) {
 
   // ---- ③ リッチメニュー C「スタッフ相談」→ 強制的に有人モードへ切替 -----
   // AI問診中・問診完了後など、どの状態からでもスタッフ対応へ切替できる。
+  // 条件3: スタッフが対応を開始したとみなし、cancelFlowState もクリアする。
   if (HUMAN_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'human');
     await safe('問診リセット', () => resetInquiry(userId));
+    await safe('cancelFlow クリア（スタッフ対応切替）', () =>
+      updateUserData(userId, { cancelFlowState: null })
+    );
     const replyText = 'スタッフ対応へ切り替えました。\n担当者より順次ご返信いたします。';
     await savePatient({ userId, displayName, supportStatus: '有人対応中' });
     await logHistory({ userId, displayName, eventType: 'スタッフ相談', content: userText });
@@ -276,7 +293,9 @@ async function handleEvent(event) {
   if (RESET_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'ai');
     await safe('問診リセット', () => resetInquiry(userId));
-    await safe('予約確定解除', () => updateUserData(userId, { reserved: false }));
+    await safe('cancelFlow クリア（#ai）', () =>
+      updateUserData(userId, { cancelFlowState: null, reserved: false })
+    );
     await savePatient({ userId, displayName, supportStatus: 'AI対応中' });
     return reply(event.replyToken, 'AI問診を再開します。\nメニューの「簡単AI診断」を押してください。');
   }
@@ -284,8 +303,22 @@ async function handleEvent(event) {
   // ---- ⑤ 対応完了キーワード（スタッフ用コマンド）------------------------
   if (COMPLETE_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'completed');
+    await safe('cancelFlow クリア（#完了）', () =>
+      updateUserData(userId, { cancelFlowState: null })
+    );
     await savePatient({ userId, displayName, supportStatus: '問診完了' });
     return null;
+  }
+
+  // ---- ⑤-b キャンセルフロー手動解除コマンド（スタッフ用）-----------------
+  // スタッフが LINE OA Manager から "#cancel解除" と送信するとフローをクリアできる。
+  // 使用タイミング: スタッフが顧客に直接返信した後、フローを終了させたい場合。
+  if (CANCEL_FLOW_RESET_KEYWORDS.some((kw) => userText.includes(kw))) {
+    await safe('cancelFlow 手動クリア', () =>
+      updateUserData(userId, { cancelFlowState: null, lastMessageAt: new Date().toISOString() })
+    );
+    await logHistory({ userId, displayName, eventType: 'キャンセルフロー手動解除', content: userText });
+    return null; // 顧客には返信しない
   }
 
   // ---- ⑥ 予約確定ユーザー → AIを起動しない（スタッフ対応のまま）----------

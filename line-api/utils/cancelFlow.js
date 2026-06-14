@@ -119,9 +119,44 @@ const UNDECIDED_KEYWORDS = [
   'まだわかりません', 'まだわからない', '決まったら', '決まり次第',
 ];
 
+/**
+ * 「操作ミス・間違い」を示すキーワード。
+ * フロー進行中にこれらが来た場合はフローを終了し、次の質問を送らない。
+ */
+const MISTAKE_KEYWORDS = [
+  '間違え', '間違い', 'まちがえ', 'まちがい',
+  '誤って', '誤り', '違います', 'ちがいます',
+  '押し間違', '押間違', '押し間違い', '押間違い',
+  '選び間違', '選び間違い',
+  'すみません間違', 'ごめんなさい',
+  '関係ないです', '別の件', 'キャンセルしません', '取り消し',
+];
+
+/** キャンセルフローの自動タイムアウト時間（時間単位） */
+const CANCEL_FLOW_TIMEOUT_HOURS = 6;
+
 function isUndecidedText(text) {
   const normalized = text.trim().toLowerCase();
   return UNDECIDED_KEYWORDS.some((kw) => normalized.includes(kw));
+}
+
+/**
+ * テキストが「操作ミス・間違い」を示すかチェックする。
+ */
+function isMistakeText(text) {
+  const normalized = text.trim().toLowerCase();
+  return MISTAKE_KEYWORDS.some((kw) => normalized.includes(kw));
+}
+
+/**
+ * cancelFlowState に保存された開始時刻からタイムアウトを判定する。
+ * @param {string|null} cancelFlowStartAt - ISO日時文字列
+ * @returns {boolean} タイムアウトなら true
+ */
+function isCancelFlowTimedOut(cancelFlowStartAt) {
+  if (!cancelFlowStartAt) return false;
+  const elapsedHours = (Date.now() - new Date(cancelFlowStartAt).getTime()) / (1000 * 60 * 60);
+  return elapsedHours >= CANCEL_FLOW_TIMEOUT_HOURS;
 }
 
 // ---- AI による日時解析 ------------------------------------------------------
@@ -212,6 +247,19 @@ async function handleCancelFlow({ replyToken, userId, displayName, userText, can
     return true;
   }
 
+  // ---- 間違いキーワード検出 → フロー即終了（次の質問を送らない）-----------
+  // STEP2・STEP3 共通。フロー進行中に「間違えました」等が来た場合は静かに終了。
+  if (isMistakeText(userText)) {
+    await safe('cancelFlow 終了（操作ミス）', () =>
+      updateUserData(userId, {
+        cancelFlowState: null,
+        lastMessageAt:   new Date().toISOString(),
+      })
+    );
+    await logHistory({ userId, displayName, eventType: 'キャンセルフロー終了', content: '操作ミスによる終了' });
+    return true; // 返信はしない（replyしないでtrueを返す）
+  }
+
   // ---- STEP2: キャンセル日時の入力待ち --------------------------------------
   if (cancelFlowState === STATES.WAIT_CANCEL_DATE) {
     const { detected, summary } = await extractDateInfo(userText, 'cancel_date');
@@ -293,7 +341,8 @@ async function handleCancelFlow({ replyToken, userId, displayName, userText, can
 }
 
 module.exports = {
-  CANCEL_FLOW_STATES: STATES,
+  CANCEL_FLOW_STATES:       STATES,
   CANCEL_FLOW_START_MESSAGE: MESSAGES.START,
+  isCancelFlowTimedOut,
   handleCancelFlow,
 };
