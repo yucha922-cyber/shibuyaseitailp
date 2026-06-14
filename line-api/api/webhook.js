@@ -2,21 +2,24 @@
  * NAORU整体 渋谷院 LINE Webhook
  *
  * リッチメニュー構成（LINE Official Account Manager で設定済み）:
- *   A: 簡単AI診断  → テキスト "AI問診" を送信
- *   B: 初回予約    → リンク（webhookイベントなし）
- *   C: スタッフ相談 → テキスト "スタッフ相談" を送信
- *   D: マップ      → リンク（webhookイベントなし）
+ *   A: 簡単AI診断       → テキスト "AI問診" を送信
+ *   B: 初回予約         → リンク（webhookイベントなし）
+ *   C: スタッフ相談      → テキスト "スタッフ相談" を送信
+ *   D: マップ           → リンク（webhookイベントなし）
+ *   E: キャンセル        → テキスト "キャンセル" を送信
  *
  * 処理フロー:
  *   LINEメッセージ受信
- *     ↓ Redisでモード・問診ステップを確認
- *     ├ 有人対応中         → AIスキップ、記録のみ
- *     ├ #ai / AI再開       → AIモードに戻す
- *     ├ #完了              → 問診完了
- *     ├ 「スタッフ相談」等 → 有人モードへ切替
- *     ├ 問診中（step 1〜6）→ 回答保存 → 次の質問 or サマリー生成
- *     ├ 「AI問診」         → 問診開始
- *     └ その他             → 通常AI問診
+ *     ↓ Redisでモード・問診ステップ・cancelFlowState を確認
+ *     ├ 有人対応中               → AIスキップ、記録のみ
+ *     ├ #ai / AI再開             → AIモードに戻す
+ *     ├ #完了                    → 問診完了
+ *     ├ 「スタッフ相談」等        → 有人モードへ切替
+ *     ├ 「キャンセル」           → キャンセルフロー開始
+ *     ├ cancelFlowState が設定中  → キャンセルフロー継続
+ *     ├ 問診中（step 1〜6）       → 回答保存 → 次の質問 or サマリー生成
+ *     ├ 「AI問診」               → 問診開始
+ *     └ その他                   → 通常AI問診
  */
 
 const express = require('express');
@@ -27,6 +30,7 @@ const { upsertPatient, getPatient, appendHistory } = require('../utils/sheets');
 const { getQuestion, isAnalysisStep, isCompleted, resolveAnswer, formatAnswers,
         evaluateStress, evaluateRisk, evaluateSleep, evaluateDeskWork } = require('../utils/inquiry');
 const { RICH_MENU_ACTIONS }                                    = require('../utils/richMenu');
+const { handleCancelFlow }                                     = require('../utils/cancelFlow');
 const {
   getUserData, getMode, setMode, updateUserData,
   getConversationHistory, saveConversation,
@@ -172,10 +176,11 @@ async function handleEvent(event) {
   const displayName = await getDisplayName(userId);
 
   // Redis から現在の状態を一括取得
-  let mode        = 'ai';
-  let inquiryStep = 0;
-  let history     = [];
-  let reserved    = false; // 予約確定フラグ（true ならAIを起動しない）
+  let mode             = 'ai';
+  let inquiryStep      = 0;
+  let history          = [];
+  let reserved         = false; // 予約確定フラグ（true ならAIを起動しない）
+  let cancelFlowState  = null;  // キャンセルフローの現在 state
 
   try {
     const [userData, hist, step] = await Promise.all([
@@ -183,10 +188,11 @@ async function handleEvent(event) {
       getConversationHistory(userId),
       getInquiryStep(userId),
     ]);
-    mode        = userData.mode ?? 'ai';
-    history     = hist;
-    inquiryStep = step;
-    reserved    = userData.reserved === true;
+    mode            = userData.mode ?? 'ai';
+    history         = hist;
+    inquiryStep     = step;
+    reserved        = userData.reserved === true;
+    cancelFlowState = userData.cancelFlowState ?? null;
 
     // ---- 有人モードの自動復帰 -------------------------------------------
     // スタッフが対応完了後にAIへ戻し忘れても、最後のやり取りから
@@ -207,7 +213,31 @@ async function handleEvent(event) {
     console.error('[webhook] Redis取得失敗（AIモードで続行）:', err.message);
   }
 
-  // ---- ① リッチメニュー A「簡単AI診断」→ 強制的にAIモードへ切替 ---------
+  // ---- ① キャンセルフロー --------------------------------------------------
+  // リッチメニュー「キャンセル」ボタン押下でフロー開始。フロー継続中もここで処理する。
+  // human モード・予約確定中でも割り込みできる（患者都合のキャンセルを優先）。
+  //
+  // ※「キャンセル」は AI問診中断キーワード（⑧）とも重複する。
+  //   問診中（inquiryStep≧1）に「キャンセル」が来た場合は従来どおり
+  //   問診中断（⑧）を優先し、問診外でのみキャンセルフローを開始する。
+  //   これにより既存の問診中断機能を壊さない。
+  const isCancelFlowTrigger = userText === RICH_MENU_ACTIONS.CANCEL_FLOW && inquiryStep === 0;
+  if (isCancelFlowTrigger || cancelFlowState !== null) {
+    const handled = await handleCancelFlow({
+      replyToken:      event.replyToken,
+      userId,
+      displayName,
+      userText,
+      // トリガーボタン直後は state=null で渡す（START メッセージを返す）
+      cancelFlowState: isCancelFlowTrigger ? null : cancelFlowState,
+      reply,
+      logHistory,
+      safe,
+    });
+    if (handled) return;
+  }
+
+  // ---- ② リッチメニュー A「簡単AI診断」→ 強制的にAIモードへ切替 ---------
   // human モード中・予約確定中など、どの状態からでも問診を開始できる。
   if (userText === RICH_MENU_ACTIONS.AI_INQUIRY || userText.includes('AI問診') || userText.includes('AI診断')) {
     await setModeSafe(userId, 'ai');
@@ -221,7 +251,7 @@ async function handleEvent(event) {
     ]);
   }
 
-  // ---- ② リッチメニュー C「スタッフ相談」→ 強制的に有人モードへ切替 -----
+  // ---- ③ リッチメニュー C「スタッフ相談」→ 強制的に有人モードへ切替 -----
   // AI問診中・問診完了後など、どの状態からでもスタッフ対応へ切替できる。
   if (HUMAN_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'human');
@@ -233,7 +263,7 @@ async function handleEvent(event) {
     return reply(event.replyToken, replyText);
   }
 
-  // ---- ③ AIモードに戻すキーワード（スタッフ用コマンド）------------------
+  // ---- ④ AIモードに戻すキーワード（スタッフ用コマンド）------------------
   if (RESET_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'ai');
     await safe('問診リセット', () => resetInquiry(userId));
@@ -242,39 +272,39 @@ async function handleEvent(event) {
     return reply(event.replyToken, 'AI問診を再開します。\nメニューの「簡単AI診断」を押してください。');
   }
 
-  // ---- ④ 対応完了キーワード（スタッフ用コマンド）------------------------
+  // ---- ⑤ 対応完了キーワード（スタッフ用コマンド）------------------------
   if (COMPLETE_KEYWORDS.some((kw) => userText.includes(kw))) {
     await setModeSafe(userId, 'completed');
     await savePatient({ userId, displayName, supportStatus: '問診完了' });
     return null;
   }
 
-  // ---- ⑤ 予約確定ユーザー → AIを起動しない（スタッフ対応のまま）----------
+  // ---- ⑥ 予約確定ユーザー → AIを起動しない（スタッフ対応のまま）----------
   if (reserved) {
     await logHistory({ userId, displayName, eventType: '予約確定ユーザーメッセージ', content: userText });
     await safe('最終時刻更新', () => updateUserData(userId, { lastMessageAt: new Date().toISOString() }));
     return null;
   }
 
-  // ---- ⑥ 有人対応中 → AIスキップ、記録のみ ------------------------------
+  // ---- ⑦ 有人対応中 → AIスキップ、記録のみ ------------------------------
   if (mode === 'human') {
     await logHistory({ userId, displayName, eventType: 'スタッフ対応中メッセージ', content: userText });
     await safe('最終時刻更新', () => updateUserData(userId, { lastMessageAt: new Date().toISOString() }));
     return null;
   }
 
-  // ---- ⑦ 問診キャンセル --------------------------------------------------
+  // ---- ⑧ 問診キャンセル --------------------------------------------------
   if (inquiryStep >= 1 && CANCEL_KEYWORDS.some((kw) => userText.includes(kw))) {
     await safe('問診リセット', () => resetInquiry(userId));
     return reply(event.replyToken, '問診をキャンセルしました。\nまたいつでもメニューの「簡単AI診断」から始められます。');
   }
 
-  // ---- ⑧ 問診進行中（step 1〜9）の回答を処理 ----------------------------
+  // ---- ⑨ 問診進行中（step 1〜9）の回答を処理 ----------------------------
   if (inquiryStep >= 1) {
     return handleInquiryStep(event.replyToken, userId, displayName, userText, inquiryStep);
   }
 
-  // ---- ⑧ 通常のAI問診（自由入力）--------------------------------------
+  // ---- ⑩ 通常のAI問診（自由入力）--------------------------------------
   let aiResult;
   try {
     aiResult = await analyzeInquiry(userText, history);

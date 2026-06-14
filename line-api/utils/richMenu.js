@@ -11,17 +11,24 @@
  *  │  (テキスト送信)     │  (リンク)            │
  *  └─────────────────────┴─────────────────────┘
  *
+ *  ※ キャンセルボタンを追加する場合:
+ *     LINE OA Manager でボタンを追加し、テキスト送信を
+ *     'キャンセル' に設定してください。
+ *
  * WebhookでLINEから届くテキスト:
  *   A → "AI問診"
  *   C → "スタッフ相談"
+ *   （キャンセルボタン） → "キャンセル"
  *
  * B・Dはリンクなのでwebhookイベントは発生しない。
  */
 
 // LINEから届く各ボタンのテキスト（webhook.jsで参照）
 const RICH_MENU_ACTIONS = {
-  AI_INQUIRY:   'AI問診',    // A: 簡単AI診断
+  AI_INQUIRY:    'AI問診',       // A: 簡単AI診断
   STAFF_CONSULT: 'スタッフ相談', // C: スタッフ相談
+  CANCEL_FLOW:   'キャンセル',   // キャンセル専用ボタン
 };
 
 module.exports = { RICH_MENU_ACTIONS };
+
