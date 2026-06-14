@@ -6,7 +6,7 @@
  *   B: 初回予約         → リンク（webhookイベントなし）
  *   C: スタッフ相談      → テキスト "スタッフ相談" を送信
  *   D: マップ           → リンク（webhookイベントなし）
- *   E: キャンセル・日程変更 → テキスト "キャンセル・日程変更" を送信
+ *   E: キャンセル        → テキスト "キャンセル" を送信
  *
  * 処理フロー:
  *   LINEメッセージ受信
@@ -15,7 +15,7 @@
  *     ├ #ai / AI再開             → AIモードに戻す
  *     ├ #完了                    → 問診完了
  *     ├ 「スタッフ相談」等        → 有人モードへ切替
- *     ├ 「キャンセル・日程変更」  → キャンセルフロー開始
+ *     ├ 「キャンセル」           → キャンセルフロー開始
  *     ├ cancelFlowState が設定中  → キャンセルフロー継続
  *     ├ 問診中（step 1〜6）       → 回答保存 → 次の質問 or サマリー生成
  *     ├ 「AI問診」               → 問診開始
@@ -213,11 +213,15 @@ async function handleEvent(event) {
     console.error('[webhook] Redis取得失敗（AIモードで続行）:', err.message);
   }
 
-  // ---- ① キャンセル・日程変更フロー ----------------------------------------
-  // リッチメニューボタン押下でフロー開始。フロー継続中もここで処理する。
+  // ---- ① キャンセルフロー --------------------------------------------------
+  // リッチメニュー「キャンセル」ボタン押下でフロー開始。フロー継続中もここで処理する。
   // human モード・予約確定中でも割り込みできる（患者都合のキャンセルを優先）。
-  // ただしスタッフ用コマンド（#ai, #完了, #スタッフ相談）は上で処理済みのため競合しない。
-  const isCancelFlowTrigger = userText === RICH_MENU_ACTIONS.CANCEL_FLOW;
+  //
+  // ※「キャンセル」は AI問診中断キーワード（⑧）とも重複する。
+  //   問診中（inquiryStep≧1）に「キャンセル」が来た場合は従来どおり
+  //   問診中断（⑧）を優先し、問診外でのみキャンセルフローを開始する。
+  //   これにより既存の問診中断機能を壊さない。
+  const isCancelFlowTrigger = userText === RICH_MENU_ACTIONS.CANCEL_FLOW && inquiryStep === 0;
   if (isCancelFlowTrigger || cancelFlowState !== null) {
     const handled = await handleCancelFlow({
       replyToken:      event.replyToken,
