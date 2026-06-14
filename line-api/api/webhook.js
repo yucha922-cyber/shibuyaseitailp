@@ -221,7 +221,7 @@ async function handleEvent(event) {
   //   問診中（inquiryStep≧1）に「キャンセル」が来た場合は従来どおり
   //   問診中断（⑧）を優先し、問診外でのみキャンセルフローを開始する。
   //   これにより既存の問診中断機能を壊さない。
-  const isCancelFlowTrigger = userText === RICH_MENU_ACTIONS.CANCEL_FLOW && inquiryStep === 0;
+  const isCancelFlowTrigger = userText === RICH_MENU_ACTIONS.CANCEL_FLOW;
   if (isCancelFlowTrigger || cancelFlowState !== null) {
     const handled = await handleCancelFlow({
       replyToken:      event.replyToken,

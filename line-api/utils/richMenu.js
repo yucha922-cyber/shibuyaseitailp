@@ -27,7 +27,7 @@
 const RICH_MENU_ACTIONS = {
   AI_INQUIRY:    'AI問診',       // A: 簡単AI診断
   STAFF_CONSULT: 'スタッフ相談', // C: スタッフ相談
-  CANCEL_FLOW:   'キャンセル',   // キャンセル専用ボタン
+  CANCEL_FLOW:   'キャンセル・日時変更', // キャンセル・日時変更専用ボタン
 };
 
 module.exports = { RICH_MENU_ACTIONS };
