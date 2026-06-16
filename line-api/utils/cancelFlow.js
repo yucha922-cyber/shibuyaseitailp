@@ -70,7 +70,7 @@ const MESSAGES = {
   CANCEL_ACCEPTED:
 `承知いたしました。
 
-キャンセル内容を受付いたしました。
+キャンセル内容／送信内容を受付いたしました。
 
 別日でのご予約をご希望の場合は、ご希望日時を3つほどご返信ください。
 
@@ -80,6 +80,16 @@ const MESSAGES = {
 ・6月28日 18:00以降
 
 ご希望日時が未定の場合は、「未定」とご返信ください。`,
+
+  /** 時間の長さだけの変更（短縮・延長など）を受け付けた場合 */
+  DURATION_CHANGE_ACCEPTED:
+`承知いたしました。
+
+ご予約時間の変更内容を受付いたしました。
+
+スタッフが予約状況を確認のうえ、後ほどご返信いたします。
+
+今しばらくお待ちください。`,
 
   /** 日時が分からなかった場合（STEP2 パターンB） */
   CANCEL_DATE_UNKNOWN:
@@ -167,9 +177,11 @@ function isCancelFlowTimedOut(cancelFlowStartAt) {
  *
  * @param {string} userText
  * @param {'cancel_date'|'new_dates'} mode
- * @returns {Promise<{detected: boolean, summary: string}>}
+ * @returns {Promise<{detected: boolean, summary: string, intent?: string}>}
  *   detected: 日時（または候補日時）が含まれていれば true
  *   summary:  スタッフ向けの日時テキスト（Sheets記録用）
+ *   intent:   cancel_date モード時のみ 'duration_change'（時間の長さだけの変更）
+ *             または 'cancel'（キャンセル・日程変更）
  */
 async function extractDateInfo(userText, mode) {
   // キーワードで「未定・分からない」と確定できる場合は AI を呼ばない
@@ -178,11 +190,13 @@ async function extractDateInfo(userText, mode) {
   }
 
   const systemPrompt = mode === 'cancel_date'
-    ? `あなたはユーザーの返信からキャンセルしたい予約の日時を抽出するアシスタントです。
-日時・曜日・時間帯・「明日」「来週」などの相対表現が含まれていれば detected: true にしてください。
-そうでない場合は detected: false にしてください。
+    ? `あなたはユーザーの返信から予約の変更内容を読み取るアシスタントです。
+- 日時・曜日・時間帯・「明日」「来週」などの相対表現が含まれていれば detected: true にしてください。そうでなければ detected: false。
+- intent は次のいずれかにしてください:
+  - "duration_change": 予約の日付は変えず、施術時間の長さ（枠）だけを変えたい場合（例:「1時間を30分に変更したい」「30分を60分に延ばしたい」）
+  - "cancel": 予約自体のキャンセル、または別日への日程変更を希望している場合
 以下のJSON形式のみで返答してください:
-{"detected": true|false, "summary": "抽出した日時情報（例: 6月20日15時）または空文字"}`
+{"detected": true|false, "intent": "duration_change"|"cancel", "summary": "抽出した日時・変更内容（例: 6月18日14時の枠を30分に短縮）または空文字"}`
     : `あなたはユーザーの返信から希望日時の候補を抽出するアシスタントです。
 1つでも日時・曜日・時間帯の候補が含まれていれば detected: true にしてください。
 そうでない場合は detected: false にしてください。
@@ -204,11 +218,12 @@ async function extractDateInfo(userText, mode) {
     return {
       detected: parsed.detected === true,
       summary:  String(parsed.summary ?? ''),
+      intent:   parsed.intent === 'duration_change' ? 'duration_change' : 'cancel',
     };
   } catch (err) {
     console.error('[cancelFlow] AI日時解析エラー:', err.message);
     // フォールバック: エラー時は「日時あり」として扱い次ステップへ進める
-    return { detected: true, summary: userText.slice(0, 50) };
+    return { detected: true, summary: userText.slice(0, 50), intent: 'cancel' };
   }
 }
 
@@ -262,10 +277,26 @@ async function handleCancelFlow({ replyToken, userId, displayName, userText, can
 
   // ---- STEP2: キャンセル日時の入力待ち --------------------------------------
   if (cancelFlowState === STATES.WAIT_CANCEL_DATE) {
-    const { detected, summary } = await extractDateInfo(userText, 'cancel_date');
+    const { detected, summary, intent } = await extractDateInfo(userText, 'cancel_date');
 
-    if (detected) {
-      // パターンA: 日時を取得できた
+    if (detected && intent === 'duration_change') {
+      // パターンC: 日付は変えず、施術時間の長さだけの変更（短縮・延長）
+      // 別日候補のヒアリングは不要なのでフローを終了する
+      await safe('cancelFlow 終了（時間変更）', () =>
+        updateUserData(userId, {
+          cancelFlowState:  null,
+          cancelDate:       summary || userText,
+          lastMessageAt:    new Date().toISOString(),
+        })
+      );
+      await logHistory({
+        userId, displayName,
+        eventType: 'キャンセルフロー終了',
+        content:   `施術時間の変更希望: ${summary || userText}`,
+      });
+      await reply(replyToken, MESSAGES.DURATION_CHANGE_ACCEPTED);
+    } else if (detected) {
+      // パターンA: 日時を取得できた（キャンセル・日程変更）
       await safe('cancelFlow state → wait_new_dates', () =>
         updateUserData(userId, {
           cancelFlowState:   STATES.WAIT_NEW_DATES,
