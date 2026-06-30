@@ -294,7 +294,7 @@ async function handleEvent(event) {
     await safe('cancelFlow クリア（スタッフ対応切替）', () =>
       updateUserData(userId, { cancelFlowState: null })
     );
-    const replyText = 'スタッフ対応へ切り替えました。\n担当者より順次ご返信いたします。';
+    const replyText = 'スタッフが後ほどご連絡いたします。\n今しばらくお待ちください。';
     await savePatient({ userId, displayName, supportStatus: '有人対応中' });
     await logHistory({ userId, displayName, eventType: 'スタッフ相談', content: userText });
     await saveTalk(userId, userText, replyText, {});
